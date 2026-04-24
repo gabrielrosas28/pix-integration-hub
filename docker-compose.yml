@@ -1,0 +1,28 @@
+services:
+
+  postgres:
+    image: postgres:15
+    container_name: squad8_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: squad8
+      POSTGRES_PASSWORD: squad8_password
+      POSTGRES_DB: squad_8_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  mock-server:
+    image: mockserver/mockserver
+    ports:
+      - "1080:1080"
+
+volumes:
+  postgres_data:
