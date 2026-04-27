@@ -71,6 +71,56 @@ if ($apiReady) {
     Stop-Job -Job $job
     exit 1
 }
+# Step 3: Start API (background job)
+Write-Host "[3/4] Ensuring no other ApiService instances are running..." -ForegroundColor Yellow
+
+# Stop background job if previously started by this script
+Get-Job -Name ApiService -State Running -ErrorAction SilentlyContinue | ForEach-Object {
+    Write-Host "Stopping background job ApiService..." -ForegroundColor Yellow
+    Stop-Job -Job $_ -Force -ErrorAction SilentlyContinue
+    Remove-Job -Job $_ -Force -ErrorAction SilentlyContinue
+}
+
+# Kill any dotnet/powershell processes that reference ApiService in their command line
+$apiProjectPath = (Resolve-Path "$PSScriptRoot\..\ApiService").Path
+try {
+    $procs = Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -and ( $_.CommandLine -like "*ApiService*" -or $_.CommandLine -like "*ApiService.dll*" -or $_.CommandLine -like "*dotnet run*" -or $_.CommandLine -like "*dotnet.exe*") }
+    foreach ($p in $procs) {
+        # Only kill processes that actually reference the ApiService path or dotnet run
+        if ($p.CommandLine -like "*ApiService*" -or $p.CommandLine -like "*$apiProjectPath*" -or $p.CommandLine -like "*dotnet run*") {
+            Write-Host "Killing process Id $($p.ProcessId) referencing ApiService" -ForegroundColor Yellow
+            Stop-Process -Id $p.ProcessId -Force -ErrorAction SilentlyContinue
+        }
+    }
+} catch {
+    # ignore if WMI access restricted
+}
+
+Write-Host "Starting ApiService in a new PowerShell window..." -ForegroundColor Yellow
+# Start API in a new PowerShell window so `dotnet run` has a console
+$cmd = "Set-Location -LiteralPath '$apiProjectPath'; dotnet run --launch-profile https --no-build"
+$apiProcess = Start-Process -FilePath 'powershell' -ArgumentList '-NoExit','-Command',$cmd -PassThru
+
+Write-Host "Waiting for API to start..." -ForegroundColor White
+$apiReady = $false
+$attempts = 0
+$maxAttempts = 60
+
+while (-not $apiReady -and $attempts -lt $maxAttempts) {
+    try {
+        $response = Invoke-RestMethod -Method Get -Uri "$ApiUrl/weatherforecast" -ErrorAction SilentlyContinue
+        if ($response) { $apiReady = $true }
+    } catch { }
+    if (-not $apiReady) { Start-Sleep -Seconds 1; $attempts++ }
+}
+
+if ($apiReady) {
+    Write-Host "API is ready." -ForegroundColor Green
+} else {
+    Write-Host "API failed to start after $maxAttempts attempts." -ForegroundColor Red
+    if ($apiProcess -and $apiProcess.Id) { Stop-Process -Id $apiProcess.Id -Force -ErrorAction SilentlyContinue }
+    exit 1
+}
 
 Write-Host ""
 
@@ -150,7 +200,8 @@ Write-Host "Failed: $testsFailed" -ForegroundColor Green
 Write-Host ""
 
 Write-Host "Stopping API..." -ForegroundColor Yellow
-Stop-Job -Job $job
-Remove-Job -Job $job
+if ($apiProcess -and $apiProcess.Id) {
+    try { Stop-Process -Id $apiProcess.Id -Force -ErrorAction SilentlyContinue; Write-Host "Stopped ApiService process $($apiProcess.Id)" -ForegroundColor Yellow } catch { }
+}
 
 Write-Host "Done!" -ForegroundColor Cyan
