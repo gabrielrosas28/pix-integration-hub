@@ -1,0 +1,23 @@
+{
+  "httpRequest": {
+    "method": "POST",
+    "path": "/psp/pay/timeout"
+  },
+  "httpResponse": {
+    "statusCode": 200,
+    "delay": {
+      "timeUnit": "MILLISECONDS",
+      "value": 5000
+    },
+    "headers": [
+      {
+        "name": "Content-Type",
+        "values": ["application/json"]
+      }
+    ],
+    "body": "{\"status\":\"approved\",\"transactionId\":\"tx-timeout\"}"
+  },
+  "times": {
+    "unlimited": true
+  }
+}

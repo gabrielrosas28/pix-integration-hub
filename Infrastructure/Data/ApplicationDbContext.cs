@@ -1,5 +1,5 @@
-using Microsoft.EntityFrameworkCore;
 using ApiService.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace ApiService.Infrastructure.Data;
 
@@ -10,14 +10,13 @@ public class ApplicationDbContext : DbContext
     {
     }
 
-    public DbSet<Conta> Contas { get; set; }
-    public DbSet<Secret> Secrets { get; set; }
-    public DbSet<Auditoria> Auditorias { get; set; }
+    public DbSet<Conta> Contas => Set<Conta>();
+    public DbSet<Secret> Secrets => Set<Secret>();
+    public DbSet<Auditoria> Auditorias => Set<Auditoria>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<Conta>()
-            .HasKey(c => c.ClientId);
+        modelBuilder.Entity<Conta>().HasKey(c => c.ClientId);
 
         modelBuilder.Entity<Conta>()
             .HasOne(c => c.Secret)
