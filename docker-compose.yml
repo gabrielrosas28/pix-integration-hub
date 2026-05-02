@@ -20,7 +20,7 @@ services:
       - "15672:15672"
 
   mock-server:
-    image: mockserver/mockserver
+    image: mockserver/mockserver 
     ports:
       - "1080:1080"
 

@@ -4,7 +4,16 @@ using ApiService.Infrastructure.Data;
 using ApiService.Infrastructure.MockPayments;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Infrastructure.Messaging.RabbitMQ;
+// Teste de envio de mensagem para RabbitMQ
+var producer = new RabbitMqProducer();
 
+await producer.SendMessageAsync(new PaymentCreatedMessage
+{
+    UserId = 1,
+    Amount = 100
+});
+// FIm do teste
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
