@@ -12,17 +12,53 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - pix-net
 
   rabbitmq:
     image: rabbitmq:3-management
     ports:
       - "5672:5672"
       - "15672:15672"
+    networks:
+      - pix-net
 
   mock-server:
-    image: mockserver/mockserver 
+    image: mockserver/mockserver:latest
+    container_name: mockserver
     ports:
       - "1080:1080"
+    volumes:
+      - ./mockserver/expectations:/expectations:ro
+    healthcheck:
+      test: ["CMD", "java", "-version"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - pix-net
+
+  mockserver-seed:
+    image: curlimages/curl:latest
+    depends_on:
+      mock-server:
+        condition: service_healthy
+    volumes:
+      - ./mockserver/expectations:/expectations:ro
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        for f in /expectations/*.json; do
+          echo "Posting $$f";
+          curl -s -X PUT "http://mock-server:1080/mockserver/expectation" -H "Content-Type: application/json" -d @"$$f";
+        done
+    networks:
+      - pix-net
+
+networks:
+  pix-net:
+    driver: bridge
 
 volumes:
   postgres_data:
