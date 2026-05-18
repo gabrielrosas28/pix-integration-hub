@@ -9,13 +9,20 @@ using Application.Interfaces;
 using Infrastructure.Services;
 using Application.DTOs;
 // Teste de envio de mensagem para RabbitMQ
-var producer = new RabbitMqProducer();
-
-await producer.SendMessageAsync(new PaymentCreatedMessage
+try
 {
-    UserId = 1,
-    Amount = 100
-});
+    var producer = new RabbitMqProducer();
+
+    await producer.SendMessageAsync(new PaymentCreatedMessage
+    {
+        UserId = 1,
+        Amount = 100
+    });
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"RabbitMQ test send failed: {ex.Message}");
+}
 // FIm do teste
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,6 +40,7 @@ builder.Services.AddHttpClient<IMockPaymentGateway, MockPaymentGateway>((service
 builder.Services.AddScoped<ProcessMockPaymentUseCase>();
 builder.Services.AddScoped<IContaService, ContaService>();
 builder.Services.AddScoped<ISecretService, SecretService>();
+builder.Services.AddScoped<IChargeService, Infrastructure.Services.ChargeService>();
 
 var app = builder.Build();
 
@@ -145,6 +153,31 @@ app.MapPost("/secrets", async (
     var secret = await secretService.CreateAsync(request);
 
     return Results.Ok(secret);
+});
+
+app.MapPost("/cobranca/v1/cob", async (
+    Application.DTOs.CreateCobRequest request,
+    Application.Interfaces.IChargeService chargeService,
+    CancellationToken ct) =>
+{
+    var response = await chargeService.CreateCobAsync(request, ct);
+    return Results.Created($"/cobranca/v1/{response.TxId}", response);
+});
+
+app.MapPost("/cobranca/v1/cobv", async (
+    Application.DTOs.CreateCobvRequest request,
+    Application.Interfaces.IChargeService chargeService,
+    CancellationToken ct) =>
+{
+    try
+    {
+        var response = await chargeService.CreateCobvAsync(request, ct);
+        return Results.Created($"/cobranca/v1/{response.TxId}", response);
+    }
+    catch (ArgumentException ex)
+    {
+        return Results.BadRequest(new { error = ex.Message });
+    }
 });
 
 app.MapPut("/secrets/{id}", async (

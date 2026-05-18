@@ -98,6 +98,59 @@ namespace Infrastructure.Migrations
                     b.ToTable("Secrets");
                 });
 
+            modelBuilder.Entity("ApiService.Domain.Entities.Charge", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ChargeType")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Emv")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("DueDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("InvoiceID")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("ExpiresInSeconds")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("PixKey")
+                        .HasColumnType("text");
+
+                    b.Property<string>("PixLink")
+                        .HasColumnType("text");
+
+                    b.Property<string>("PayerMessage")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Raw")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Status")
+                        .HasColumnType("text");
+
+                    b.Property<decimal?>("Amount")
+                        .HasColumnType("numeric");
+
+                    b.Property<string>("TxId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Charges");
+                });
+
             modelBuilder.Entity("ApiService.Domain.Entities.Secret", b =>
                 {
                     b.HasOne("ApiService.Domain.Entities.Conta", "Conta")
