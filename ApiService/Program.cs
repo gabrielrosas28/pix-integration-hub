@@ -32,6 +32,7 @@ builder.Services.AddHttpClient<IMockPaymentGateway, MockPaymentGateway>((service
 });
 builder.Services.AddScoped<ProcessMockPaymentUseCase>();
 builder.Services.AddScoped<IContaService, ContaService>();
+builder.Services.AddScoped<ISecretService, SecretService>();
 
 var app = builder.Build();
 
@@ -114,6 +115,56 @@ app.MapDelete("/contas/{id}", async (
     IContaService contaService) =>
 {
     var deleted = await contaService.DeleteAsync(id);
+
+    if (!deleted)
+        return Results.NotFound();
+
+    return Results.NoContent();
+});
+
+app.MapGet("/secrets", async (ISecretService secretService) =>
+{
+    var list = await secretService.GetAllAsync();
+    return Results.Ok(list);
+});
+
+app.MapGet("/secrets/{id}", async (int id, ISecretService secretService) =>
+{
+    var secret = await secretService.GetByIdAsync(id);
+
+    if (secret is null)
+        return Results.NotFound();
+
+    return Results.Ok(secret);
+});
+
+app.MapPost("/secrets", async (
+    CreateSecretRequest request,
+    ISecretService secretService) =>
+{
+    var secret = await secretService.CreateAsync(request);
+
+    return Results.Ok(secret);
+});
+
+app.MapPut("/secrets/{id}", async (
+    int id,
+    UpdateSecretRequest request,
+    ISecretService secretService) =>
+{
+    var secret = await secretService.UpdateAsync(id, request);
+
+    if (secret is null)
+        return Results.NotFound();
+
+    return Results.Ok(secret);
+});
+
+app.MapDelete("/secrets/{id}", async (
+    int id,
+    ISecretService secretService) =>
+{
+    var deleted = await secretService.DeleteAsync(id);
 
     if (!deleted)
         return Results.NotFound();
