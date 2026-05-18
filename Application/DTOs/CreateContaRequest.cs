@@ -1,12 +1,8 @@
-namespace ApiService.Domain.Entities;
+namespace Application.DTOs;
 
-public class Conta
+public class CreateContaRequest
 {
-    public int Id { get; set; }
-
-    public int ClientId { get; set; }
-
-    //public int? SecretId { get; set; }
+    public int SecretId { get; set; }
 
     public string Documento { get; set; } = string.Empty;
 
@@ -15,6 +11,4 @@ public class Conta
     public string NumeroConta { get; set; } = string.Empty;
 
     public string Agencia { get; set; } = string.Empty;
-
-    //public Secret? Secret { get; set; }
 }

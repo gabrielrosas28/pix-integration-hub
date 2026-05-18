@@ -5,6 +5,9 @@ using ApiService.Infrastructure.MockPayments;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Infrastructure.Messaging.RabbitMQ;
+using Application.Interfaces;
+using Infrastructure.Services;
+using Application.DTOs;
 // Teste de envio de mensagem para RabbitMQ
 var producer = new RabbitMqProducer();
 
@@ -28,6 +31,7 @@ builder.Services.AddHttpClient<IMockPaymentGateway, MockPaymentGateway>((service
     httpClient.BaseAddress = new Uri(mockServerOptions.BaseUrl, UriKind.Absolute);
 });
 builder.Services.AddScoped<ProcessMockPaymentUseCase>();
+builder.Services.AddScoped<IContaService, ContaService>();
 
 var app = builder.Build();
 
@@ -65,6 +69,56 @@ app.MapPost("/payments/mock", async (
 {
     var response = await useCase.ExecuteAsync(request, cancellationToken);
     return Results.Ok(response);
+});
+
+app.MapGet("/contas", async (IContaService contaService) =>
+{
+    var contas = await contaService.GetAllAsync();
+    return Results.Ok(contas);
+});
+
+app.MapGet("/contas/{id}", async (int id, IContaService contaService) =>
+{
+    var conta = await contaService.GetByIdAsync(id);
+
+    if (conta is null)
+        return Results.NotFound();
+
+    return Results.Ok(conta);
+});
+
+app.MapPost("/contas", async (
+    CreateContaRequest request,
+    IContaService contaService) =>
+{
+    var conta = await contaService.CreateAsync(request);
+
+    return Results.Ok(conta);
+});
+
+app.MapPut("/contas/{id}", async (
+    int id,
+    UpdateContaRequest request,
+    IContaService contaService) =>
+{
+    var conta = await contaService.UpdateAsync(id, request);
+
+    if (conta is null)
+        return Results.NotFound();
+
+    return Results.Ok(conta);
+});
+
+app.MapDelete("/contas/{id}", async (
+    int id,
+    IContaService contaService) =>
+{
+    var deleted = await contaService.DeleteAsync(id);
+
+    if (!deleted)
+        return Results.NotFound();
+
+    return Results.NoContent();
 });
 
 app.Run();

@@ -15,14 +15,9 @@ public class ApplicationDbContext : DbContext
     public DbSet<Auditoria> Auditorias => Set<Auditoria>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
-    {
-        modelBuilder.Entity<Conta>().HasKey(c => c.ClientId);
+{
+    modelBuilder.Entity<Conta>().HasKey(c => c.Id);
 
-        modelBuilder.Entity<Conta>()
-            .HasOne(c => c.Secret)
-            .WithOne(s => s.Conta)
-            .HasForeignKey<Secret>(s => s.ClientId);
-
-        base.OnModelCreating(modelBuilder);
-    }
+    base.OnModelCreating(modelBuilder);
+}
 }
