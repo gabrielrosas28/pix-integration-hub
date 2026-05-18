@@ -29,7 +29,7 @@ public class ContaService : IContaService
     {
     var conta = new Conta
     {
-        //SecretId = request.SecretId,
+        SecretId = request.SecretId,
         Documento = request.Documento,
         BankId = request.BankId,
         NumeroConta = request.NumeroConta,
@@ -50,7 +50,7 @@ public class ContaService : IContaService
     if (conta == null)
         return null;
 
-    //conta.SecretId = request.SecretId;
+    conta.SecretId = request.SecretId;
     conta.Documento = request.Documento;
     conta.BankId = request.BankId;
     conta.NumeroConta = request.NumeroConta;
