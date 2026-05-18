@@ -1,0 +1,12 @@
+{
+  "httpRequest": {
+    "method": "POST",
+    "path": "/contas"
+  },
+  "httpResponse": {
+    "statusCode": 201,
+    "headers": [ { "name": "Content-Type", "values": ["application/json"] } ],
+    "body": "{\"id\":2,\"clientId\":2,\"secretId\":2,\"documento\":\"98765432100\",\"bankId\":2,\"numeroConta\":\"00054321\",\"agencia\":\"0002\"}"
+  },
+  "times": { "unlimited": true }
+}
