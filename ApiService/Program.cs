@@ -1,8 +1,46 @@
+using ApiService.Application.MockPayments;
+using ApiService.Infrastructure.Configuration;
+using ApiService.Infrastructure.Data;
+using ApiService.Infrastructure.MockPayments;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using Infrastructure.Messaging.RabbitMQ;
+using Application.Interfaces;
+using Infrastructure.Services;
+using Application.DTOs;
+// Teste de envio de mensagem para RabbitMQ
+try
+{
+    var producer = new RabbitMqProducer();
+
+    await producer.SendMessageAsync(new PaymentCreatedMessage
+    {
+        UserId = 1,
+        Amount = 100
+    });
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"RabbitMQ test send failed: {ex.Message}");
+}
+// FIm do teste
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+builder.Services.Configure<MockServerOptions>(builder.Configuration.GetSection("ExternalServices:MockServer"));
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddHttpClient<IMockPaymentGateway, MockPaymentGateway>((serviceProvider, httpClient) =>
+{
+    var mockServerOptions = serviceProvider.GetRequiredService<IOptions<MockServerOptions>>().Value;
+    httpClient.BaseAddress = new Uri(mockServerOptions.BaseUrl, UriKind.Absolute);
+});
+builder.Services.AddScoped<ProcessMockPaymentUseCase>();
+builder.Services.AddScoped<IContaService, ContaService>();
+builder.Services.AddScoped<ISecretService, SecretService>();
+builder.Services.AddScoped<IChargeService, Infrastructure.Services.ChargeService>();
 
 var app = builder.Build();
 
@@ -32,6 +70,140 @@ app.MapGet("/weatherforecast", () =>
     return forecast;
 })
 .WithName("GetWeatherForecast");
+
+app.MapPost("/payments/mock", async (
+    CreateMockPaymentRequest request,
+    ProcessMockPaymentUseCase useCase,
+    CancellationToken cancellationToken) =>
+{
+    var response = await useCase.ExecuteAsync(request, cancellationToken);
+    return Results.Ok(response);
+});
+
+app.MapGet("/contas", async (IContaService contaService) =>
+{
+    var contas = await contaService.GetAllAsync();
+    return Results.Ok(contas);
+});
+
+app.MapGet("/contas/{id}", async (int id, IContaService contaService) =>
+{
+    var conta = await contaService.GetByIdAsync(id);
+
+    if (conta is null)
+        return Results.NotFound();
+
+    return Results.Ok(conta);
+});
+
+app.MapPost("/contas", async (
+    CreateContaRequest request,
+    IContaService contaService) =>
+{
+    var conta = await contaService.CreateAsync(request);
+
+    return Results.Ok(conta);
+});
+
+app.MapPut("/contas/{id}", async (
+    int id,
+    UpdateContaRequest request,
+    IContaService contaService) =>
+{
+    var conta = await contaService.UpdateAsync(id, request);
+
+    if (conta is null)
+        return Results.NotFound();
+
+    return Results.Ok(conta);
+});
+
+app.MapDelete("/contas/{id}", async (
+    int id,
+    IContaService contaService) =>
+{
+    var deleted = await contaService.DeleteAsync(id);
+
+    if (!deleted)
+        return Results.NotFound();
+
+    return Results.NoContent();
+});
+
+app.MapGet("/secrets", async (ISecretService secretService) =>
+{
+    var list = await secretService.GetAllAsync();
+    return Results.Ok(list);
+});
+
+app.MapGet("/secrets/{id}", async (int id, ISecretService secretService) =>
+{
+    var secret = await secretService.GetByIdAsync(id);
+
+    if (secret is null)
+        return Results.NotFound();
+
+    return Results.Ok(secret);
+});
+
+app.MapPost("/secrets", async (
+    CreateSecretRequest request,
+    ISecretService secretService) =>
+{
+    var secret = await secretService.CreateAsync(request);
+
+    return Results.Ok(secret);
+});
+
+app.MapPost("/cobranca/v1/cob", async (
+    Application.DTOs.CreateCobRequest request,
+    Application.Interfaces.IChargeService chargeService,
+    CancellationToken ct) =>
+{
+    var response = await chargeService.CreateCobAsync(request, ct);
+    return Results.Created($"/cobranca/v1/{response.TxId}", response);
+});
+
+app.MapPost("/cobranca/v1/cobv", async (
+    Application.DTOs.CreateCobvRequest request,
+    Application.Interfaces.IChargeService chargeService,
+    CancellationToken ct) =>
+{
+    try
+    {
+        var response = await chargeService.CreateCobvAsync(request, ct);
+        return Results.Created($"/cobranca/v1/{response.TxId}", response);
+    }
+    catch (ArgumentException ex)
+    {
+        return Results.BadRequest(new { error = ex.Message });
+    }
+});
+
+app.MapPut("/secrets/{id}", async (
+    int id,
+    UpdateSecretRequest request,
+    ISecretService secretService) =>
+{
+    var secret = await secretService.UpdateAsync(id, request);
+
+    if (secret is null)
+        return Results.NotFound();
+
+    return Results.Ok(secret);
+});
+
+app.MapDelete("/secrets/{id}", async (
+    int id,
+    ISecretService secretService) =>
+{
+    var deleted = await secretService.DeleteAsync(id);
+
+    if (!deleted)
+        return Results.NotFound();
+
+    return Results.NoContent();
+});
 
 app.Run();
 
