@@ -12,8 +12,10 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<Conta> Contas => Set<Conta>();
     public DbSet<Secret> Secrets => Set<Secret>();
+    public DbSet<ChavePix> ChavesPix => Set<ChavePix>();
     public DbSet<Auditoria> Auditorias => Set<Auditoria>();
     public DbSet<ApiService.Domain.Entities.Charge> Charges => Set<ApiService.Domain.Entities.Charge>();
+    
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -27,6 +29,11 @@ public class ApplicationDbContext : DbContext
             .WithMany()
             .HasForeignKey(c => c.SecretId)
             .HasPrincipalKey(s => s.SecretID);
+        
+        modelBuilder.Entity<ChavePix>()
+            .HasOne(cp => cp.Conta)
+            .WithMany()
+            .HasForeignKey(cp => cp.ContaId);
 
         modelBuilder.Entity<ApiService.Domain.Entities.Charge>(b =>
         {

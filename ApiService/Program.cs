@@ -40,6 +40,7 @@ builder.Services.AddHttpClient<IMockPaymentGateway, MockPaymentGateway>((service
 builder.Services.AddScoped<ProcessMockPaymentUseCase>();
 builder.Services.AddScoped<IContaService, ContaService>();
 builder.Services.AddScoped<ISecretService, SecretService>();
+builder.Services.AddScoped<IChavePixService, ChavePixService>();
 builder.Services.AddScoped<IChargeService, Infrastructure.Services.ChargeService>();
 
 var app = builder.Build();
