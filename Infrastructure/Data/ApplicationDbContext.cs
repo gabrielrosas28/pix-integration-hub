@@ -21,14 +21,7 @@ public class ApplicationDbContext : DbContext
     {
         modelBuilder.Entity<Conta>().HasKey(c => c.Id);
 
-        // configure Secret primary key and FK relationship via SecretId in Conta
         modelBuilder.Entity<Secret>().HasKey(s => s.SecretID);
-
-        modelBuilder.Entity<Conta>()
-            .HasOne(c => c.Secret)
-            .WithMany()
-            .HasForeignKey(c => c.SecretId)
-            .HasPrincipalKey(s => s.SecretID);
         
         modelBuilder.Entity<ChavePix>()
             .HasOne(cp => cp.Conta)

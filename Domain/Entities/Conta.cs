@@ -16,5 +16,4 @@ public class Conta
 
     public string Agencia { get; set; } = string.Empty;
 
-    public Secret? Secret { get; set; }
 }
