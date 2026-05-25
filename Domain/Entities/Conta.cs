@@ -7,6 +7,7 @@ public class Conta
     public int ClientId { get; set; }
 
     public int? SecretId { get; set; }
+    public Secret? Secret { get; set; }
 
     public string Documento { get; set; } = string.Empty;
 

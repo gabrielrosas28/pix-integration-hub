@@ -32,8 +32,7 @@ public class SecretService : ISecretService
             ClientId = request.ClientId,
             ClienteSecret = request.ClienteSecret,
             Certificado = request.Certificado,
-            SenhaCertificado = request.SenhaCertificado,
-            ContaId = request.ContaId
+            SenhaCertificado = request.SenhaCertificado
         };
 
         _context.Secrets.Add(secret);
@@ -54,7 +53,6 @@ public class SecretService : ISecretService
         secret.ClienteSecret = request.ClienteSecret;
         secret.Certificado = request.Certificado;
         secret.SenhaCertificado = request.SenhaCertificado;
-        secret.ContaId = request.ContaId;
 
         await _context.SaveChangesAsync();
 

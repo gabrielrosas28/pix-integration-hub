@@ -21,7 +21,13 @@ public class ApplicationDbContext : DbContext
     {
         modelBuilder.Entity<Conta>().HasKey(c => c.Id);
 
-        modelBuilder.Entity<Secret>().HasKey(s => s.SecretID);
+        modelBuilder.Entity<Secret>().HasKey(s => s.Id);
+
+        modelBuilder.Entity<Conta>()
+            .HasOne(c => c.Secret)
+            .WithMany()
+            .HasForeignKey(c => c.SecretId)
+            .HasPrincipalKey(s => s.Id);
         
         modelBuilder.Entity<ChavePix>()
             .HasOne(cp => cp.Conta)
