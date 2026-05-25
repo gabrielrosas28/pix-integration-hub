@@ -98,7 +98,7 @@ namespace Infrastructure.Migrations
                     b.ToTable("Secrets");
                 });
 
-            modelBuilder.Entity("ApiService.Domain.Entities.Charge", b =>
+            modelBuilder.Entity("ApiService.Domain.Entities.Cobranca", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -148,7 +148,7 @@ namespace Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Charges");
+                    b.ToTable("Cobrancas");
                 });
 
             modelBuilder.Entity("ApiService.Domain.Entities.Secret", b =>

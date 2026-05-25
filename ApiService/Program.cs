@@ -41,7 +41,7 @@ builder.Services.AddScoped<ProcessMockPaymentUseCase>();
 builder.Services.AddScoped<IContaService, ContaService>();
 builder.Services.AddScoped<ISecretService, SecretService>();
 builder.Services.AddScoped<IChavePixService, ChavePixService>();
-builder.Services.AddScoped<IChargeService, Infrastructure.Services.ChargeService>();
+builder.Services.AddScoped<ICobrancaService, Infrastructure.Services.CobrancaService>();
 
 var app = builder.Build();
 
@@ -158,21 +158,21 @@ app.MapPost("/secrets", async (
 
 app.MapPost("/cobranca/v1/cob", async (
     Application.DTOs.CreateCobRequest request,
-    Application.Interfaces.IChargeService chargeService,
+    Application.Interfaces.ICobrancaService cobrancaService,
     CancellationToken ct) =>
 {
-    var response = await chargeService.CreateCobAsync(request, ct);
+    var response = await cobrancaService.CreateCobAsync(request, ct);
     return Results.Created($"/cobranca/v1/{response.TxId}", response);
 });
 
 app.MapPost("/cobranca/v1/cobv", async (
     Application.DTOs.CreateCobvRequest request,
-    Application.Interfaces.IChargeService chargeService,
+    Application.Interfaces.ICobrancaService cobrancaService,
     CancellationToken ct) =>
 {
     try
     {
-        var response = await chargeService.CreateCobvAsync(request, ct);
+        var response = await cobrancaService.CreateCobvAsync(request, ct);
         return Results.Created($"/cobranca/v1/{response.TxId}", response);
     }
     catch (ArgumentException ex)

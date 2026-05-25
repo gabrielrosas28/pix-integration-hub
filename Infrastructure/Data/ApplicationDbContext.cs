@@ -14,7 +14,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Secret> Secrets => Set<Secret>();
     public DbSet<ChavePix> ChavesPix => Set<ChavePix>();
     public DbSet<Auditoria> Auditorias => Set<Auditoria>();
-    public DbSet<ApiService.Domain.Entities.Charge> Charges => Set<ApiService.Domain.Entities.Charge>();
+    public DbSet<Cobranca> Cobrancas => Set<Cobranca>();
     
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -35,7 +35,7 @@ public class ApplicationDbContext : DbContext
             .WithMany()
             .HasForeignKey(cp => cp.ContaId);
 
-        modelBuilder.Entity<ApiService.Domain.Entities.Charge>(b =>
+        modelBuilder.Entity<Cobranca>(b =>
         {
             b.HasKey(c => c.Id);
             b.Property(c => c.TxId).IsRequired();
@@ -47,7 +47,7 @@ public class ApplicationDbContext : DbContext
             b.Property(c => c.PixLink);
             b.Property(c => c.Status);
             b.Property(c => c.CreatedAt);
-            b.ToTable("charges");
+            b.ToTable("cobrancas");
         });
 
         base.OnModelCreating(modelBuilder);

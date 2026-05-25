@@ -6,25 +6,23 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Services;
 
-public class ChargeService : IChargeService
+public class CobrancaService : ICobrancaService
 {
     private readonly ApplicationDbContext _db;
 
-    public ChargeService(ApplicationDbContext db)
+    public CobrancaService(ApplicationDbContext db)
     {
         _db = db;
     }
 
     public async Task<CobResponse> CreateCobAsync(CreateCobRequest request, CancellationToken cancellationToken = default)
     {
-        // generate txId
         var txId = Guid.NewGuid().ToString("N");
 
-        // simple EMV/pixLink generation (placeholder)
         var emv = $"EMV:{txId}";
         var pixLink = $"pix://{txId}";
 
-        var charge = new Charge
+        var cobranca = new Cobranca
         {
             TxId = txId,
             InvoiceID = request.InvoiceID,
@@ -41,13 +39,13 @@ public class ChargeService : IChargeService
             CreatedAt = DateTime.UtcNow
         };
 
-        _db.Charges.Add(charge);
+        _db.Cobrancas.Add(cobranca);
         await _db.SaveChangesAsync(cancellationToken);
 
         return new CobResponse
         {
             TxId = txId,
-            Status = charge.Status,
+            Status = cobranca.Status,
             Emv = emv,
             PixLink = pixLink
         };
@@ -55,7 +53,6 @@ public class ChargeService : IChargeService
 
     public async Task<CobResponse> CreateCobvAsync(CreateCobvRequest request, CancellationToken cancellationToken = default)
     {
-        // validation: cobv requires an expiration (either DueDate or ExpiresInSeconds)
         if (request.DueDate is null && request.ExpiresInSeconds is null)
         {
             throw new ArgumentException("Cobv requires DueDate or ExpiresInSeconds");
@@ -65,7 +62,7 @@ public class ChargeService : IChargeService
         var emv = $"EMV:{txId}";
         var pixLink = $"pix://{txId}";
 
-        var charge = new Charge
+        var cobranca = new Cobranca
         {
             TxId = txId,
             InvoiceID = request.InvoiceID,
@@ -82,13 +79,13 @@ public class ChargeService : IChargeService
             CreatedAt = DateTime.UtcNow
         };
 
-        _db.Charges.Add(charge);
+        _db.Cobrancas.Add(cobranca);
         await _db.SaveChangesAsync(cancellationToken);
 
         return new CobResponse
         {
             TxId = txId,
-            Status = charge.Status,
+            Status = cobranca.Status,
             Emv = emv,
             PixLink = pixLink
         };

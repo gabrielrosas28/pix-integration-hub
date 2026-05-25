@@ -5,12 +5,12 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace Infrastructure.Migrations
 {
-    public partial class AddCharges : Migration
+    public partial class AddCobrancas : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "Charges",
+                name: "Cobrancas",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
@@ -32,13 +32,13 @@ namespace Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Charges", x => x.Id);
+                    table.PrimaryKey("PK_Cobrancas", x => x.Id);
                 });
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(name: "Charges");
+            migrationBuilder.DropTable(name: "Cobrancas");
         }
     }
 }
