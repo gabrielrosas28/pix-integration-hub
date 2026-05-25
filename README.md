@@ -82,14 +82,11 @@ INFRAESTRUTURA LOCAL (docker-compose.yml)
 Rede: "pix-net" (bridge). Quatro servicos:
 
 1) PostgreSQL 15 (squad8_postgres)
-   - Porta: 5432:5432
-   - User: squad8 | Password: squad8_password | DB: squad_8_db
 
 2) RabbitMQ 3-management
-   - Portas: 5672 (AMQP) e 15672 (painel de gerenciamento)
+   
 
 3) Mock Server (mockserver/mockserver:latest)
-   - Porta: 1080  (simula APIs bancarias externas)
 
 4) MockServer Seed (curlimages/curl)
    - Servico utilitario para popular o mock server com expectativas iniciais
