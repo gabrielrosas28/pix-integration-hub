@@ -1,41 +1,57 @@
-// Path: BankingHub.Infrastructure/BankAdapters/Itau/ItauPixAdapter.cs
-
 using System.Text;
 using System.Text.Json;
 using System.Net.Http.Headers;
-using BankingHub.Application.Interfaces; // Ajuste os namespaces conforme seu projeto
+using System.Globalization;
+using BankingHub.Application.Interfaces;
 
-namespace BankingHub.Infrastructure.BankAdapters.Itau;
+namespace Infrastructure.BankAdapters.Itau;
 
 /// <summary>
 /// Adapter para integração com o Banco Itaú - Pix Recebimentos.
 /// Esta classe conhece os endpoints, headers e payloads específicos do Itaú.
 /// </summary>
-public sealed class ItauPixAdapter : BaseBankPixAdapter
+public sealed class ItauPixAdapter : IBankPixAdapter
 {
     private readonly HttpClient _http;
     private readonly ItauOptions _options;
     private readonly IItauTokenProvider _tokenProvider;
-    private readonly ILogger<ItauPixAdapter> _logger;
 
     public ItauPixAdapter(
         HttpClient http,
         ItauOptions options,
-        IItauTokenProvider tokenProvider,
-        ILogger<ItauPixAdapter> logger)
+        IItauTokenProvider tokenProvider)
     {
         _http = http;
         _options = options;
         _tokenProvider = tokenProvider;
-        _logger = logger;
     }
 
-    public override string BankId => "ITAU";
-    public override bool SupportsCob => true;
-    public override bool SupportsCobV => true;
+    public string BankId => "ITAU";
+    public bool SupportsCob => true;
+    public bool SupportsCobV => true;
     private string BaseUrl => _options.UseSandbox 
-    ? _options.SandboxBaseUrl 
-    : _options.ProdutionBaseUrl; 
+        ? _options.SandboxBaseUrl 
+        : _options.ProdutionBaseUrl;
+
+    public Task<ChargeResponse> CreateCobAsync(ChargeRequest request, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException("CreateCobAsync ainda não foi implementado para o Itaú.");
+    }
+
+    public Task<QrCodeResponse> GetQrCodeAsync(string txId, PixChargeType type, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException("GetQrCodeAsync ainda não foi implementado para o Itaú.");
+    }
+
+    public bool ValidateWebhook(IReadOnlyDictionary<string, string> headers, JsonElement body)
+    {
+        throw new NotImplementedException("ValidateWebhook ainda não foi implementado para o Itaú.");
+    }
+
+    public WebhookEvent ParseWebhookEvent(JsonElement body)
+    {
+        throw new NotImplementedException("ParseWebhookEvent ainda não foi implementado para o Itaú.");
+    }
 
 /// <summary>
 /// Cria uma cobrança CobV no Itaú.
@@ -43,7 +59,7 @@ public sealed class ItauPixAdapter : BaseBankPixAdapter
 /// </summary>
 
     // Exemplo estruturado com base nos fragmentos de criação/emissão de cobrança
-    public override async Task<ChargeResponse> CreateCobVAsync(ChargeRequest request, CancellationToken ct)
+    public async Task<ChargeResponse> CreateCobVAsync(ChargeRequest request, CancellationToken ct)
     {
 
         if (request.Type != PixChargeType.CobV)
@@ -83,21 +99,15 @@ public sealed class ItauPixAdapter : BaseBankPixAdapter
             // Adiciona headers obrigatórios do Itaú
             httpRequest.Headers.Add("x-correlationID", Guid.NewGuid().ToString());
 
-            _logger.LogDebug("Criando CobV no Itaú: TxId={TxId}", request.TxId);
-
             // Executa request
             using var response = await _http.SendAsync(httpRequest, ct);
             var rawText = await response.Content.ReadAsStringAsync(ct);
-
-            // Log do response para auditoria
-        _logger.LogDebug(
-            "Response Itaú: Status={StatusCode}, Body={Body}",
-            (int)response.StatusCode, rawText);
 
         if (!response.IsSuccessStatusCode)
         {
             throw new BankIntegrationException(
                 $"Itaú CreateCobV failed: {(int)response.StatusCode} - {BankId}",
+                BankId,
                 (int)response.StatusCode);
         }
 
@@ -119,7 +129,7 @@ public sealed class ItauPixAdapter : BaseBankPixAdapter
  /// Este é o método crítico para confirmar pagamentos.
  /// </summary>
 
-    public override async Task<ChargeStatusResponse> GetChargeStatusAsync(
+    public async Task<ChargeStatusResponse> GetChargeStatusAsync(
         string txId, 
         PixChargeType type,
         CancellationToken ct)
@@ -164,10 +174,10 @@ public sealed class ItauPixAdapter : BaseBankPixAdapter
             var firstPix = pixArr[0];
 
             if (firstPix.TryGetProperty("valor", out var valorE1))
-                paidAmount =  decimal.Parse(valorEl.GetString()!, CultureInfo.InvariantCulture);
+                paidAmount = decimal.Parse(valorE1.GetString()!, CultureInfo.InvariantCulture);
 
             if (firstPix.TryGetProperty("horario", out var horarioE1))
-                paidAt =  DateTimeOffset.Parse(horarioEl.GetString()!);
+                paidAt = DateTimeOffset.Parse(horarioE1.GetString()!);
 
             if (firstPix.TryGetProperty("endToEndId", out var e2eEl))
                 payload = e2eEl.GetString();
@@ -178,7 +188,7 @@ public sealed class ItauPixAdapter : BaseBankPixAdapter
             Status: status,
             PaidAmount: paidAmount,
             PaidAt: paidAt,
-            Payload: payload,
+            PaymentId: payload,
             Raw: root);
 
     }
