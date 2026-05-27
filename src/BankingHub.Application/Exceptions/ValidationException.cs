@@ -1,6 +1,6 @@
 using FluentValidation.Results;
 
-namespace BankingHub.Application.Common.Exceptions;
+namespace BankingHub.Application.Exceptions;
 
 public sealed class ValidationException : Exception
 {

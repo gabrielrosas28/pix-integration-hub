@@ -1,4 +1,4 @@
-using BankingHub.Application.Common.Exceptions;
+using BankingHub.Application.Exceptions;
 using BankingHub.Domain.Aggregates.Invoice;
 using BankingHub.Domain.Repositories;
 using MediatR;

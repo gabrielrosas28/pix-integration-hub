@@ -1,26 +1,29 @@
-using BankingHub.Application.Common.Exceptions;
+using BankingHub.Application.Exceptions;
 using BankingHub.Application.Interfaces;
 using BankingHub.Domain.Aggregates.PixCharge;
 using BankingHub.Domain.Repositories;
+using BankingHub.Domain.Services;
 using BankingHub.Domain.ValueObjects;
-using MediatR;
 using Microsoft.Extensions.Logging;
 
-namespace BankingHub.Application.Commands.ReconcileCharge;
+namespace BankingHub.Application.Services;
 
-public sealed class ReconcileChargeHandler
-    : IRequestHandler<ReconcileChargeCommand, ReconcileChargeResult>
+/// <summary>
+/// Implementation of <see cref="IPixReconciliationService"/>.
+/// Owns the only path that may transition an Invoice/PixCharge to Paid (§3.1.2).
+/// </summary>
+public sealed class PixReconciliationService : IPixReconciliationService
 {
     private readonly IPixChargeRepository _chargeRepository;
     private readonly IInvoiceRepository _invoiceRepository;
     private readonly IBankAdapterFactory _adapterFactory;
-    private readonly ILogger<ReconcileChargeHandler> _logger;
+    private readonly ILogger<PixReconciliationService> _logger;
 
-    public ReconcileChargeHandler(
+    public PixReconciliationService(
         IPixChargeRepository chargeRepository,
         IInvoiceRepository invoiceRepository,
         IBankAdapterFactory adapterFactory,
-        ILogger<ReconcileChargeHandler> logger)
+        ILogger<PixReconciliationService> logger)
     {
         _chargeRepository = chargeRepository;
         _invoiceRepository = invoiceRepository;
@@ -28,40 +31,39 @@ public sealed class ReconcileChargeHandler
         _logger = logger;
     }
 
-    public async Task<ReconcileChargeResult> Handle(
-        ReconcileChargeCommand cmd,
+    public async Task<ReconciliationResult> ReconcileAsync(
+        string txId,
+        string? bankId,
         CancellationToken ct)
     {
-        var charge = await _chargeRepository.GetByTxIdAsync(TxId.From(cmd.TxId), ct)
-            ?? throw new NotFoundException("PixCharge", cmd.TxId);
+        var charge = await _chargeRepository.GetByTxIdAsync(TxId.From(txId), ct)
+            ?? throw new NotFoundException("PixCharge", txId);
 
-        // Idempotency: if already paid, just return current state
         if (charge.Status == PixChargeStatus.Paid)
         {
-            _logger.LogDebug("Charge already paid: TxId={TxId}", cmd.TxId);
-            return new ReconcileChargeResult(
+            _logger.LogDebug("Charge already paid: TxId={TxId}", txId);
+            return new ReconciliationResult(
                 charge.Status.ToString(), true, charge.PaidAt, charge.PaidAmount?.Value);
         }
 
-        var bankId = cmd.BankId ?? charge.BankId;
-        var adapter = _adapterFactory.Get(bankId);
+        var resolvedBankId = bankId ?? charge.BankId;
+        var adapter = _adapterFactory.Get(resolvedBankId);
 
-        var bankStatus = await adapter.GetChargeStatusAsync(cmd.TxId, charge.ChargeType, ct);
+        var bankStatus = await adapter.GetChargeStatusAsync(txId, charge.ChargeType, ct);
 
         _logger.LogDebug(
             "Bank-side status for TxId={TxId}: {Status}",
-            cmd.TxId, bankStatus.Status);
+            txId, bankStatus.Status);
 
         if (bankStatus.Status != PixChargeStatus.Paid)
         {
-            return new ReconcileChargeResult(
+            return new ReconciliationResult(
                 bankStatus.Status.ToString(), false, null, null);
         }
 
-        // Payment confirmed: update domain
         var invoice = await _invoiceRepository.GetByIdAsync(charge.InvoiceId, ct)
             ?? throw new InvalidOperationException(
-                $"Invoice {charge.InvoiceId} not found for paid charge {cmd.TxId}");
+                $"Invoice {charge.InvoiceId} not found for paid charge {txId}");
 
         var paidAmount = Money.BRL(bankStatus.PaidAmount ?? 0);
         var paidAt = bankStatus.PaidAt?.UtcDateTime ?? DateTime.UtcNow;
@@ -74,9 +76,9 @@ public sealed class ReconcileChargeHandler
 
         _logger.LogInformation(
             "Reconciliation completed: TxId={TxId}, PaidAmount={Amount}",
-            cmd.TxId, paidAmount);
+            txId, paidAmount);
 
-        return new ReconcileChargeResult(
+        return new ReconciliationResult(
             PixChargeStatus.Paid.ToString(), true, paidAt, paidAmount.Value);
     }
 }

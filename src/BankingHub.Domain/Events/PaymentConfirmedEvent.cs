@@ -1,6 +1,8 @@
 using BankingHub.Domain.Aggregates.Invoice;
+using BankingHub.Domain.Services;
 using BankingHub.Domain.ValueObjects;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace BankingHub.Domain.Events;
 
@@ -14,3 +16,30 @@ public sealed record PaymentConfirmedEvent(
     TxId TxId,
     Money Amount,
     DateTime PaidAt) : INotification;
+
+public sealed class PaymentConfirmedEventHandler : INotificationHandler<PaymentConfirmedEvent>
+{
+    private readonly INotificationService _notifications;
+    private readonly ILogger<PaymentConfirmedEventHandler> _logger;
+
+    public PaymentConfirmedEventHandler(
+        INotificationService notifications,
+        ILogger<PaymentConfirmedEventHandler> logger)
+    {
+        _notifications = notifications;
+        _logger = logger;
+    }
+
+    public async Task Handle(PaymentConfirmedEvent notification, CancellationToken ct)
+    {
+        _logger.LogInformation(
+            "Payment confirmed: Invoice={InvoiceId}, TxId={TxId}, Amount={Amount}",
+            notification.InvoiceId, notification.TxId, notification.Amount);
+
+        await _notifications.NotifyPaymentConfirmedAsync(
+            notification.InvoiceId.ToString(),
+            notification.TxId.ToString(),
+            notification.Amount.Value,
+            ct);
+    }
+}

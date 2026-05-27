@@ -1,5 +1,5 @@
-using BankingHub.Application.Commands.ReconcileCharge;
 using BankingHub.Application.Interfaces;
+using BankingHub.Domain.Services;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -9,16 +9,16 @@ public sealed class ProcessWebhookHandler
     : IRequestHandler<ProcessWebhookCommand, ProcessWebhookResult>
 {
     private readonly IBankAdapterFactory _adapterFactory;
-    private readonly IMediator _mediator;
+    private readonly IPixReconciliationService _reconciliation;
     private readonly ILogger<ProcessWebhookHandler> _logger;
 
     public ProcessWebhookHandler(
         IBankAdapterFactory adapterFactory,
-        IMediator mediator,
+        IPixReconciliationService reconciliation,
         ILogger<ProcessWebhookHandler> logger)
     {
         _adapterFactory = adapterFactory;
-        _mediator = mediator;
+        _reconciliation = reconciliation;
         _logger = logger;
     }
 
@@ -48,7 +48,7 @@ public sealed class ProcessWebhookHandler
             "Webhook accepted: TxId={TxId}, Bank={BankId}, Type={Type}. Triggering reconciliation.",
             evt.TxId, cmd.BankId, evt.EventType);
 
-        await _mediator.Send(new ReconcileChargeCommand(evt.TxId!, cmd.BankId), ct);
+        await _reconciliation.ReconcileAsync(evt.TxId!, cmd.BankId, ct);
 
         return new ProcessWebhookResult(true, evt.TxId, "Reconciliation triggered");
     }

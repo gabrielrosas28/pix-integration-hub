@@ -1,4 +1,4 @@
-namespace BankingHub.Domain.Common;
+namespace BankingHub.Domain;
 
 public abstract record StronglyTypedId<TValue>(TValue Value) where TValue : notnull
 {

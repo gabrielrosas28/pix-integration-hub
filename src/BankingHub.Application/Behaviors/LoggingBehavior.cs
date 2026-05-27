@@ -2,7 +2,7 @@ using System.Diagnostics;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
-namespace BankingHub.Application.Common.Behaviors;
+namespace BankingHub.Application.Behaviors;
 
 /// <summary>
 /// Pipeline behavior that logs every request entering the application layer along

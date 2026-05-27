@@ -1,5 +1,7 @@
 using System.Reflection;
-using BankingHub.Application.Common.Behaviors;
+using BankingHub.Application.Behaviors;
+using BankingHub.Application.Services;
+using BankingHub.Domain.Services;
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,12 +17,15 @@ public static class DependencyInjection
         services.AddMediatR(cfg =>
         {
             cfg.RegisterServicesFromAssembly(assembly);
+            cfg.RegisterServicesFromAssembly(typeof(Domain.AggregateRoot<>).Assembly);
             cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
             cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
             cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(TransactionBehavior<,>));
         });
 
         services.AddValidatorsFromAssembly(assembly);
+
+        services.AddScoped<IPixReconciliationService, PixReconciliationService>();
 
         return services;
     }

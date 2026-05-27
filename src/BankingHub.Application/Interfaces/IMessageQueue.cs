@@ -1,4 +1,4 @@
-namespace BankingHub.Application.Common.Interfaces;
+namespace BankingHub.Application.Interfaces;
 
 /// <summary>
 /// Abstraction over an async message bus (RabbitMQ, etc.) for fire-and-forget

@@ -1,3 +1,4 @@
+using BankingHub.Application.Exceptions;
 using BankingHub.Application.Interfaces;
 using BankingHub.Domain.Aggregates.Invoice;
 using BankingHub.Domain.Repositories;
@@ -29,7 +30,7 @@ public sealed class CreateInvoiceHandler
         CancellationToken ct)
     {
         if (!_adapterFactory.IsSupported(cmd.BankId))
-            throw new Common.Exceptions.ValidationException(
+            throw new ValidationException(
                 $"Bank '{cmd.BankId}' is not supported. Available: {string.Join(", ", _adapterFactory.GetAvailableBanks())}");
 
         var invoice = Invoice.Create(

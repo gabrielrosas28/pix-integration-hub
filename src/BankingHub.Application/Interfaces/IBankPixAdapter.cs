@@ -85,3 +85,11 @@ public enum WebhookEventType
     PaymentCanceled = 1,
     Unknown = 99
 }
+
+// Enums consumed by this contract — defined in the Domain to keep the
+// Clean Architecture dependency rule (Application -> Domain only):
+//   - BankingHub.Domain.Aggregates.PixCharge.PixChargeType   { Cob, CobV }
+//   - BankingHub.Domain.Aggregates.PixCharge.PixChargeStatus { Active, Paid, Expired, Canceled, Unknown }
+// See §6.2 of the architecture doc, which shows them here for readability,
+// and §4.2, which locates them in the Domain.
+

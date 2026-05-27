@@ -1,4 +1,3 @@
-using BankingHub.Domain.Common;
 using BankingHub.Domain.Events;
 using BankingHub.Domain.Exceptions;
 using BankingHub.Domain.ValueObjects;

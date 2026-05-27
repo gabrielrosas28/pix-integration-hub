@@ -1,4 +1,4 @@
-using BankingHub.Application.Common.Exceptions;
+using BankingHub.Application.Exceptions;
 using BankingHub.Domain.Repositories;
 using BankingHub.Domain.ValueObjects;
 using MediatR;

@@ -1,4 +1,4 @@
-namespace BankingHub.Application.Common.Interfaces;
+namespace BankingHub.Application.Interfaces;
 
 /// <summary>
 /// Coordinates transactional commit across repositories.

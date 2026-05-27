@@ -1,8 +1,8 @@
-using BankingHub.Application.Common.Interfaces;
+using BankingHub.Application.Interfaces;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
-namespace BankingHub.Application.Common.Behaviors;
+namespace BankingHub.Application.Behaviors;
 
 /// <summary>
 /// Pipeline behavior that wraps a command in a single Unit of Work commit.

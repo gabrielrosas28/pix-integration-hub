@@ -1,6 +1,6 @@
 using MediatR;
 
-namespace BankingHub.Domain.Common;
+namespace BankingHub.Domain;
 
 public abstract class AggregateRoot<TId> where TId : notnull
 {

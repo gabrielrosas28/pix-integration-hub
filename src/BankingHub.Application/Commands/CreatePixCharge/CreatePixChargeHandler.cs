@@ -1,4 +1,4 @@
-using BankingHub.Application.Common.Exceptions;
+using BankingHub.Application.Exceptions;
 using BankingHub.Application.Interfaces;
 using BankingHub.Domain.Aggregates.Invoice;
 using BankingHub.Domain.Aggregates.PixCharge;
@@ -6,7 +6,7 @@ using BankingHub.Domain.Repositories;
 using BankingHub.Domain.ValueObjects;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using ValidationException = BankingHub.Application.Common.Exceptions.ValidationException;
+using ValidationException = BankingHub.Application.Exceptions.ValidationException;
 
 namespace BankingHub.Application.Commands.CreatePixCharge;
 

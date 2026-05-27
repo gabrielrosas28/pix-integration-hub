@@ -1,4 +1,4 @@
-namespace BankingHub.Application.Common.Exceptions;
+namespace BankingHub.Application.Exceptions;
 
 /// <summary>
 /// Raised when an integration with an external system (bank, queue, etc.) fails

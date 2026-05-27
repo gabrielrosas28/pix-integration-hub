@@ -1,9 +1,9 @@
-using BankingHub.Application.Common.Exceptions;
+using BankingHub.Application.Exceptions;
 using FluentValidation;
 using MediatR;
-using ValidationException = BankingHub.Application.Common.Exceptions.ValidationException;
+using ValidationException = BankingHub.Application.Exceptions.ValidationException;
 
-namespace BankingHub.Application.Common.Behaviors;
+namespace BankingHub.Application.Behaviors;
 
 /// <summary>
 /// MediatR pipeline behavior that runs all registered FluentValidation validators

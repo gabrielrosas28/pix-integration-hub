@@ -1,4 +1,4 @@
-namespace BankingHub.Application.Common.Exceptions;
+namespace BankingHub.Application.Exceptions;
 
 public sealed class NotFoundException : Exception
 {
