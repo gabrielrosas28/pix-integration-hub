@@ -1,1 +1,11 @@
-//Criei esse arquivo, pois o git so considera pastas com arquivos então para a pasta ir para o repositorio fiz esse arquivo vazio, ele não tem nenhuma função
+// BankingHub.Domain/Events/InvoiceCreatedEvent.cs
+using BankingHub.Domain.Aggregates.Invoice;
+using BankingHub.Domain.ValueObjects;
+using MediatR;
+
+namespace BankingHub.Domain.Events;
+
+public sealed record InvoiceCreatedEvent(
+    InvoiceId InvoiceId,
+    Money Amount
+) : INotification;
