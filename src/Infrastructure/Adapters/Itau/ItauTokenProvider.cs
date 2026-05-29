@@ -1,13 +1,13 @@
 // BankingHub.Infrastructure/BankAdapters/Itau/ItauTokenProvider.cs
 
-using BankingHub.Infrastructure.Adapters.Itau.Abstractions;
+using Infrastructure.BankAdapters.Itau;
 using BankingHub.Infrastructure.Configuration;
 using Microsoft.Extensions.Logging;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 
-namespace BankingHub.Infrastructure.Adapters.Itau;
+namespace Infrastructure.BankAdapters.Itau;
 
 /// <summary>
 /// Gerencia tokens OAuth2 do Itaú com cache automático.

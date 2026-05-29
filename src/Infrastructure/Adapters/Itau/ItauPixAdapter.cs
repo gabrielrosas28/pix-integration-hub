@@ -13,12 +13,12 @@ namespace Infrastructure.BankAdapters.Itau;
 public sealed class ItauPixAdapter : IBankPixAdapter
 {
     private readonly HttpClient _http;
-    private readonly ItauOptions _options;
+    private readonly ItauAdapterOptions _options;
     private readonly IItauTokenProvider _tokenProvider;
 
     public ItauPixAdapter(
         HttpClient http,
-        ItauOptions options,
+        ItauAdapterOptions options,
         IItauTokenProvider tokenProvider)
     {
         _http = http;

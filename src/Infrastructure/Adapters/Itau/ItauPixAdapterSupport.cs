@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Infrastructure.BankAdapters.Itau;
 
-public sealed class ItauOptions
+public sealed class ItauAdapterOptions
 {
     public bool UseSandbox { get; set; }
     public string SandboxBaseUrl { get; set; } = string.Empty;
