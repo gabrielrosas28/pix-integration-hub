@@ -1,5 +1,5 @@
-// BankingHub.Domain/Aggregates/Invoice/InvoiceId.cs
-namespace BankingHub.Domain.Aggregates.Invoice;
+﻿// Domain/Aggregates/Invoice/InvoiceId.cs
+namespace Domain.Aggregates.Invoice;
 
 public sealed record InvoiceId
 {

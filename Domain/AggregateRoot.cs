@@ -1,7 +1,7 @@
-// BankingHub.Domain/AggregateRoot.cs
+﻿// Domain/AggregateRoot.cs
 using MediatR;
 
-namespace BankingHub.Domain;
+namespace Domain;
 
 public abstract class AggregateRoot<TId>
 {

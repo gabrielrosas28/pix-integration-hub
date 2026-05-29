@@ -1,5 +1,5 @@
-// BankingHub.Domain/Exceptions/DomainException.cs
-namespace BankingHub.Domain.Exceptions;
+﻿// Domain/Exceptions/DomainException.cs
+namespace Domain.Exceptions;
 
 public class DomainException : Exception
 {

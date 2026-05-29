@@ -1,9 +1,9 @@
-// BankingHub.Domain/Events/InvoiceCreatedEvent.cs
-using BankingHub.Domain.Aggregates.Invoice;
-using BankingHub.Domain.ValueObjects;
+﻿// Domain/Events/InvoiceCreatedEvent.cs
+using Domain.Aggregates.Invoice;
+using Domain.ValueObjects;
 using MediatR;
 
-namespace BankingHub.Domain.Events;
+namespace Domain.Events;
 
 public sealed record InvoiceCreatedEvent(
     InvoiceId InvoiceId,

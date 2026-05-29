@@ -1,9 +1,10 @@
-// BankingHub.Domain/ValueObjects/TxId.cs
-namespace BankingHub.Domain.ValueObjects;
+﻿// Domain/ValueObjects/TxId.cs
+using Domain.Exceptions;
+namespace Domain.ValueObjects;
 
 /// <summary>
-/// Value Object que representa o identificador único de uma cobrança Pix.
-/// Segue o padrão definido pelo BACEN: até 35 caracteres alfanuméricos.
+/// Value Object que representa o identificador Ãºnico de uma cobranÃ§a Pix.
+/// Segue o padrÃ£o definido pelo BACEN: atÃ© 35 caracteres alfanumÃ©ricos.
 /// </summary>
 public sealed record TxId
 {
@@ -17,20 +18,20 @@ public sealed record TxId
     public static TxId From(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
-            throw new InvalidTxIdException("TxId não pode ser vazio");
+            throw new InvalidTxIdException("TxId nÃ£o pode ser vazio");
             
         if (value.Length > 35)
-            throw new InvalidTxIdException("TxId não pode exceder 35 caracteres");
+            throw new InvalidTxIdException("TxId nÃ£o pode exceder 35 caracteres");
             
         if (!System.Text.RegularExpressions.Regex.IsMatch(value, "^[a-zA-Z0-9]+$"))
-            throw new InvalidTxIdException("TxId deve conter apenas caracteres alfanuméricos");
+            throw new InvalidTxIdException("TxId deve conter apenas caracteres alfanumÃ©ricos");
 
         return new TxId(value);
     }
 
     /// <summary>
-    /// Gera um novo TxId único.
-    /// Formato: {prefixo}{timestamp}{random} = máximo 35 chars
+    /// Gera um novo TxId Ãºnico.
+    /// Formato: {prefixo}{timestamp}{random} = mÃ¡ximo 35 chars
     /// </summary>
     public static TxId Generate(string prefix = "PIX")
     {
@@ -43,6 +44,6 @@ public sealed record TxId
 
     public override string ToString() => Value;
 
-    // Conversão implícita para string
+    // ConversÃ£o implÃ­cita para string
     public static implicit operator string(TxId txId) => txId.Value;
 }

@@ -5,8 +5,8 @@ namespace Domain.Aggregates.Account;
 
 public class Account : AggregateRoot<AccountId>
 {
-    public string Name { get; private set; }
-    public string Document { get; private set; }
+    public string Name { get; private set; } = null!;
+    public string Document { get; private set; } = null!;
     public DateTime CreatedAt { get; private set; }
 
     private Account() { } // Required by EF Core

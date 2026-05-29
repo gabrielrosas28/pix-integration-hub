@@ -1,5 +1,5 @@
-// BankingHub.Domain/Aggregates/Invoice/InvoiceStatus.cs
-namespace BankingHub.Domain.Aggregates.Invoice;
+﻿// Domain/Aggregates/Invoice/InvoiceStatus.cs
+namespace Domain.Aggregates.Invoice;
 
 public enum InvoiceStatus
 {
