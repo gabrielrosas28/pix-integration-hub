@@ -1,5 +1,9 @@
 using ApiService.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using Domain.Aggregates.Invoice;
+using Domain.Aggregates.PixCharge;
+using Domain.Aggregates.Secret;
+using Infrastructure.Data.Context.Configurations;
 
 namespace ApiService.Infrastructure.Data;
 
@@ -15,6 +19,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<ChavePix> ChavesPix => Set<ChavePix>();
     public DbSet<Auditoria> Auditorias => Set<Auditoria>();
     public DbSet<Cobranca> Cobrancas => Set<Cobranca>();
+    public DbSet<Invoice> Invoices => Set<Invoice>();
+    public DbSet<PixCharge> PixCharges => Set<PixCharge>();
     
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -23,11 +29,10 @@ public class ApplicationDbContext : DbContext
 
         modelBuilder.Entity<Secret>().HasKey(s => s.Id);
 
+        // Relacionamento entre Conta e Secret será tratado via SecretId (Foreign Key)
         modelBuilder.Entity<Conta>()
-            .HasOne(c => c.Secret)
-            .WithMany()
-            .HasForeignKey(c => c.SecretId)
-            .HasPrincipalKey(s => s.Id);
+            .Property(c => c.SecretId)
+            .IsRequired(false);
         
         modelBuilder.Entity<ChavePix>()
             .HasOne(cp => cp.Conta)
@@ -48,6 +53,10 @@ public class ApplicationDbContext : DbContext
             b.Property(c => c.CreatedAt);
             b.ToTable("cobrancas");
         });
+
+        // Aplicar configurações das entidades de domínio
+        modelBuilder.ApplyConfiguration(new InvoiceConfiguration());
+        modelBuilder.ApplyConfiguration(new PixChargeConfiguration());
 
         base.OnModelCreating(modelBuilder);
     }

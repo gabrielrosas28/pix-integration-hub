@@ -4,14 +4,15 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Domain.Aggregates.Invoice;
 using Domain.Repositories;
+using ApiService.Infrastructure.Data;
 
 namespace Infrastructure.Persistence.Repositories;
 
 public sealed class InvoiceRepository : IInvoiceRepository
 {
-    private readonly BankingDbContext _context;
+    private readonly ApplicationDbContext _context;
 
-    public InvoiceRepository(BankingDbContext context)
+    public InvoiceRepository(ApplicationDbContext context)
     {
         _context = context;
     }
