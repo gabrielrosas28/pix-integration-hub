@@ -1,6 +1,8 @@
 // Domain/Aggregates/Invoice/Invoice.cs
 using Domain.Events;
 using Domain.ValueObjects;
+using Domain.Exceptions;
+
 
 namespace Domain.Aggregates.Invoice;
 

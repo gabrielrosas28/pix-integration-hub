@@ -1,6 +1,6 @@
 // Domain.ValueObjects/TxId.cs
 using Domain.Exceptions;
-namespace BankingHub.Domain.ValueObjects;
+namespace Domain.ValueObjects;
 
 /// <summary>
 /// Value Object que representa o identificador único de uma cobrança Pix.
