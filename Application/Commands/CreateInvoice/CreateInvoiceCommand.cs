@@ -1,1 +1,17 @@
-//Criei esse arquivo, pois o git so considera pastas com arquivos então para a pasta ir para o repositorio fiz esse arquivo vazio, ele não tem nenhuma função
+using MediatR;
+
+namespace BankingHub.Application.Commands.CreateInvoice;
+
+
+public sealed record CreateInvoiceCommand(
+    decimal Amount,
+    DateOnly DueDate,
+    string BankId,
+    string? ExternalReference = null) : IRequest<CreateInvoiceResult>;
+
+public sealed record CreateInvoiceResult(
+    Guid InvoiceId,
+    string Status,
+    decimal Amount,
+    DateOnly DueDate,
+    string BankId);

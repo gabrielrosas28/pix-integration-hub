@@ -1,1 +1,7 @@
-//Criei esse arquivo, pois o git so considera pastas com arquivos então para a pasta ir para o repositorio fiz esse arquivo vazio, ele não tem nenhuma função
+using MediatR;
+using BankingHub.Application.Queries.GetInvoice;
+
+namespace BankingHub.Application.Queries.GetInvoice;
+
+
+public sealed record GetInvoiceQuery(Guid InvoiceId) : IRequest<InvoiceDto?>;
