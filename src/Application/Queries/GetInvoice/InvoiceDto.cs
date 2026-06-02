@@ -1,1 +1,13 @@
-//Criei esse arquivo, pois o git so considera pastas com arquivos então para a pasta ir para o repositorio fiz esse arquivo vazio, ele não tem nenhuma função
+namespace BankingHub.Application.Queries.GetInvoice;
+
+
+public sealed record InvoiceDto(
+    string InvoiceId,
+    string TxId,
+    string ChargeType,
+    decimal? Amount,
+    string Status,
+    string Emv,
+    string PixLink,
+    DateTime CreatedAt,
+    DateTime? UpdatedAt);

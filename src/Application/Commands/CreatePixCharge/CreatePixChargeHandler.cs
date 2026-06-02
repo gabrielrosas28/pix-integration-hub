@@ -1,110 +1,124 @@
+using ApiService.Infrastructure.Data;
+using ApiService.Domain.Entities;
+using BankingHub.Application.Interfaces;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+
 namespace BankingHub.Application.Commands.CreatePixCharge;
 
-/// 
-/// Handler que processa o comando de criação de cobrança Pix.
-/// Orquestra a lógica de aplicação sem conter regras de negócio.
-/// 
 
 public sealed class CreatePixChargeHandler
-: IRequestHandler<CreatePixChargeCommand, CreatePixChargeResult>
+    : IRequestHandler<CreatePixChargeCommand, CreatePixChargeResult>
 {
-private readonly IInvoiceRepository _invoiceRepository;
-private readonly IPixChargeRepository _chargeRepository;
-private readonly IBankAdapterFactory _adapterFactory;
-private readonly IUnitOfWork _unitOfWork;
-private readonly ILogger<CreatePixChargeHandler> _logger;
+    private readonly ApplicationDbContext _db;
+    private readonly IBankAdapterFactory _adapterFactory;
+    private readonly ILogger<CreatePixChargeHandler> _logger;
 
-       public CreatePixChargeHandler(
-       IInvoiceRepository invoiceRepository,
-              IPixChargeRepository chargeRepository,
-              IBankAdapterFactory adapterFactory,
-              IUnitOfWork unitOfWork,
-              ILogger<CreatePixChargeHandler> logger)
-       {
-       _invoiceRepository = invoiceRepository;
-       _chargeRepository = chargeRepository;
-       _adapterFactory = adapterFactory;
-       _unitOfWork = unitOfWork;
-       _logger = logger;
-       }
+    public CreatePixChargeHandler(
+        ApplicationDbContext db,
+        IBankAdapterFactory adapterFactory,
+        ILogger<CreatePixChargeHandler> logger)
+    {
+        _db             = db;
+        _adapterFactory = adapterFactory;
+        _logger         = logger;
+    }
 
-       public async Task<CreatePixChargeResult> Handle(
-       CreatePixChargeCommand cmd,
-       CancellationToken ct)
-{
-// 1. Busca a Invoice
-var invoice = await _invoiceRepository.GetByIdAsync(
-       InvoiceId.From(cmd.InvoiceId), ct)
-       ?? throw new NotFoundException("Invoice não encontrada");
+    public async Task<CreatePixChargeResult> Handle(
+        CreatePixChargeCommand cmd,
+        CancellationToken ct)
+    {
+        // 1. Verifica se existe Invoice pendente para este InvoiceId
+        var invoiceRow = await _db.Cobrancas
+            .FirstOrDefaultAsync(
+                c => c.InvoiceID == cmd.InvoiceId.ToString() && c.Status == "open",
+                ct)
+            ?? throw new KeyNotFoundException($"Invoice '{cmd.InvoiceId}' não encontrada ou não está aberta.");
 
-// 2. Gera TxId único
-var txId = TxId.Generate();
+        // 2. Gera TxId único seguindo padrão BACEN (até 35 chars alfanuméricos)
+        var timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
+        var random    = Guid.NewGuid().ToString("N")[..10].ToUpper();
+        var txId      = $"PIX{timestamp}{random}"[..35];
 
-// 3. Obtém o adapter do banco configurado na Invoice
-var adapter = _adapterFactory.Get(invoice.BankId);
+        // 3. Determina tipo de cobrança
+        var chargeType = cmd.ChargeType.ToUpperInvariant() switch
+        {
+            "COB"  => PixChargeType.Cob,
+            "COBV" => PixChargeType.CobV,
+            _      => throw new ArgumentException($"ChargeType inválido: '{cmd.ChargeType}'. Use 'COB' ou 'COBV'.")
+        };
 
-// 4. Determina o tipo de cobrança
-var chargeType = cmd.ChargeType.ToUpperInvariant() switch
-{
-"COB" => PixChargeType.Cob,
-"COBV" => PixChargeType.CobV,
-           _ => throw new ValidationException("Tipo de cobrança invál
-};
+        // 4. Obtém o adapter do banco (BankId está armazenado no Raw da Invoice como fallback,
+        //    mas o adapter default é ITAU enquanto somente Itaú está na Fase 1)
+        var bankId  = string.IsNullOrWhiteSpace(invoiceRow.Raw) ? "ITAU" : invoiceRow.Raw;
+        var adapter = _adapterFactory.Get(bankId);
 
-// 5. Monta request normalizado
-var chargeRequest = new ChargeRequest(
-TxId: txId.Value,
-Type: chargeType,
-Amount: cmd.Amount,
-PixKey: cmd.PixKey,
-DueDate: cmd.DueDate,
-ExpiresInSeconds: cmd.ExpiresInSeconds,
-PayerMessage: cmd.PayerMessage);
+        // 5. Monta request normalizado para o adapter
+        var chargeRequest = new ChargeRequest(
+            TxId:             txId,
+            Type:             chargeType,
+            Amount:           cmd.Amount,
+            PixKey:           cmd.PixKey,
+            DueDate:          cmd.DueDate,
+            ExpiresInSeconds: cmd.ExpiresInSeconds,
+            PayerMessage:     cmd.PayerMessage);
 
-// 6. Cria cobrança no banco via adapter
-ChargeResponse bankResponse;
-try
-{
-           bankResponse = chargeType == PixChargeType.CobV
-? await adapter.CreateCobVAsync(chargeRequest, ct)
-: await adapter.CreateCobAsync(chargeRequest, ct);
-}
-catch (Exception ex)
-{
-           _logger.LogError(ex, "Erro ao criar cobrança no banco {Ban
-throw new IntegrationException($"Falha na comunicação com {
-}
+        // 6. Cria cobrança no banco via adapter
+        ChargeResponse bankResponse;
+        try
+        {
+            bankResponse = chargeType == PixChargeType.CobV
+                ? await adapter.CreateCobVAsync(chargeRequest, ct)
+                : await adapter.CreateCobAsync(chargeRequest, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao criar cobrança no banco {BankId}", bankId);
+            throw new InvalidOperationException(
+                $"Falha na comunicação com o banco '{bankId}': {ex.Message}", ex);
+        }
 
-// 7. Obtém QR Code
-var qrCode = await adapter.GetQrCodeAsync(txId.Value, chargeTy
+        // 7. Obtém QR Code EMV
+        var qrCode = await adapter.GetQrCodeAsync(txId, chargeType, ct);
 
-6.1.2 Validator com FluentValidation
-// 8. Persiste a cobrança no domínio
-var pixCharge = PixCharge.Create(
-txId: txId,
-invoiceId: invoice.Id,
-bankId: invoice.BankId,
-chargeType: chargeType,
-emv: EmvCode.From(qrCode.Emv),
-pixLink: qrCode.PixLink,
-rawPayload: bankResponse.Raw);
+        // 8. Persiste a cobrança (atualiza o registro de Invoice e cria registro de PixCharge)
+        // Atualiza invoice com TxId
+        invoiceRow.TxId      = txId;
+        invoiceRow.Status    = "active";
+        invoiceRow.UpdatedAt = DateTime.UtcNow;
 
-await _chargeRepository.AddAsync(pixCharge, ct);
+        // Cria registro separado de PixCharge
+        var pixCharge = new Cobranca
+        {
+            TxId             = txId,
+            InvoiceID        = cmd.InvoiceId.ToString(),
+            ChargeType       = cmd.ChargeType.ToUpperInvariant(),
+            Amount           = cmd.Amount,
+            PixKey           = cmd.PixKey,
+            DueDate          = cmd.DueDate.HasValue
+                                   ? cmd.DueDate.Value.ToDateTime(TimeOnly.MinValue)
+                                   : null,
+            ExpiresInSeconds = cmd.ExpiresInSeconds,
+            PayerMessage     = cmd.PayerMessage ?? string.Empty,
+            Status           = bankResponse.Status.ToString().ToLower(),
+            Emv              = qrCode.Emv,
+            PixLink          = qrCode.PixLink ?? string.Empty,
+            Raw              = bankResponse.Raw?.ToString() ?? string.Empty,
+            CreatedAt        = DateTime.UtcNow
+        };
 
-// 9. Associa TxId à Invoice
-       invoice.AssignTxId(txId);
+        _db.Cobrancas.Add(pixCharge);
+        await _db.SaveChangesAsync(ct);
 
-// 10. Commit da transação
-await _unitOfWork.SaveChangesAsync(ct);
+        _logger.LogInformation(
+            "Cobrança Pix criada: TxId={TxId}, Invoice={InvoiceId}, Banco={BankId}",
+            txId, cmd.InvoiceId, bankId);
 
-       _logger.LogInformation(
-"Cobrança Pix criada: TxId={TxId}, Invoice={InvoiceId}, Ba
-           txId, invoice.Id, invoice.BankId);
-
-return new CreatePixChargeResult(
-TxId: txId.Value,
-Status: bankResponse.Status.ToString(),
-Emv: qrCode.Emv,
-PixLink: qrCode.PixLink);
-}
+        return new CreatePixChargeResult(
+            TxId:    txId,
+            Status:  bankResponse.Status.ToString(),
+            Emv:     qrCode.Emv,
+            PixLink: qrCode.PixLink);
+    }
 }
