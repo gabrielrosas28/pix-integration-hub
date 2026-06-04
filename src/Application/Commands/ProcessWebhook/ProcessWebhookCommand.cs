@@ -1,1 +1,15 @@
-//Criei esse arquivo, pois o git so considera pastas com arquivos então para a pasta ir para o repositorio fiz esse arquivo vazio, ele não tem nenhuma função
+using MediatR;
+using System.Text.Json;
+
+namespace BankingHub.Application.Commands.ProcessWebhook;
+
+
+public sealed record ProcessWebhookCommand(
+    string BankId,
+    IReadOnlyDictionary<string, string> Headers,
+    JsonElement Body) : IRequest<ProcessWebhookResult>;
+
+public sealed record ProcessWebhookResult(
+    bool Accepted,
+    string? TxId,
+    string Message);

@@ -1,4 +1,5 @@
-namespace ApiService.Application.MockPayments;
+namespace BankingHub.Application.MockPayments;
+
 
 public sealed record CreateMockPaymentRequest(
     decimal Amount,
@@ -13,26 +14,28 @@ public sealed record MockPaymentResponse(
 public enum MockPaymentScenario
 {
     Success = 0,
-    Error = 1,
+    Error   = 1,
     Timeout = 2
 }
 
 public interface IMockPaymentGateway
 {
-    Task<MockPaymentResponse> SendAsync(CreateMockPaymentRequest request, CancellationToken cancellationToken);
+    Task<MockPaymentResponse> SendAsync(
+        CreateMockPaymentRequest request,
+        CancellationToken cancellationToken);
 }
 
 public sealed class ProcessMockPaymentUseCase
 {
-    private readonly IMockPaymentGateway mockPaymentGateway;
+    private readonly IMockPaymentGateway _gateway;
 
-    public ProcessMockPaymentUseCase(IMockPaymentGateway mockPaymentGateway)
+    public ProcessMockPaymentUseCase(IMockPaymentGateway gateway)
     {
-        this.mockPaymentGateway = mockPaymentGateway;
+        _gateway = gateway;
     }
 
-    public Task<MockPaymentResponse> ExecuteAsync(CreateMockPaymentRequest request, CancellationToken cancellationToken)
-    {
-        return mockPaymentGateway.SendAsync(request, cancellationToken);
-    }
+    public Task<MockPaymentResponse> ExecuteAsync(
+        CreateMockPaymentRequest request,
+        CancellationToken cancellationToken)
+        => _gateway.SendAsync(request, cancellationToken);
 }

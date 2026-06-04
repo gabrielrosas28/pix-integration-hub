@@ -1,28 +1,40 @@
 using AutoMapper;
-// Substitua pelos namespaces corretos do projeto:
+using BankingHub.Application.Commands.CreatePixCharge;
 using BankingHub.Application.DTOs;
-using BankingHub.Application.Queries.GetInvoice; 
-// using BankingHub.Domain.Entities; // Exemplo de onde viriam suas entidades
+using BankingHub.Application.Queries.GetInvoice;
+using BankingHub.Application.Queries.GetPixChargeStatus;
 
-namespace BankingHub.Application.Mappings
+namespace BankingHub.Application.Mappings;
+
+
+public class MappingProfile : Profile
 {
-    public class MappingProfile : Profile
+    public MappingProfile()
     {
-        public MappingProfile()
-        {
-            // Exemplo 1: Mapeando uma entidade "Invoice" do banco para o DTO de retorno
-            // CreateMap<Invoice, InvoiceDto>();
+        // ChargeRequestDto → CreatePixChargeCommand
+        CreateMap<ChargeRequestDto, CreatePixChargeCommand>()
+            .ConstructUsing(src => new CreatePixChargeCommand(
+                src.InvoiceId,
+                src.ChargeType,
+                src.Amount,
+                src.PixKey,
+                src.DueDate,
+                src.ExpiresInSeconds,
+                src.PayerMessage));
 
-            // Exemplo 2: Se os seus DTOs de Request precisarem se transformar em comandos
-            // CreateMap<ChargeRequestDto, CreateInvoiceCommand>();
-            // CreateMap<ChargeRequestDto, CreatePixChargeCommand>();
+        // CreatePixChargeResult → ChargeResponseDto  (QrCodeBase64 preenchido na Presentation)
+        CreateMap<CreatePixChargeResult, ChargeResponseDto>()
+            .ConstructUsing(src => new ChargeResponseDto(
+                src.TxId,
+                src.Status,
+                src.Emv,
+                src.PixLink,
+                string.Empty));
 
-            // Exemplo 3: Mapeando respostas de serviços externos para seus DTOs internos
-            // CreateMap<ExternalPixResponse, ChargeResponseDto>();
-            // CreateMap<ExternalQrCode, QrCodeResponseDto>();
-            
-            // Exemplo 4: Mapeando o Webhook recebido para o DTO de evento
-            // CreateMap<ExternalWebhookPayload, WebhookEventDto>();
-        }
+        // InvoiceDto (já é record — mapeamento direto caso necessário)
+        CreateMap<InvoiceDto, InvoiceDto>();
+
+        // PixChargeStatusDto
+        CreateMap<PixChargeStatusDto, PixChargeStatusDto>();
     }
 }
