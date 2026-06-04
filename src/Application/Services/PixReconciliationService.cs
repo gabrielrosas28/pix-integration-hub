@@ -1,74 +1,120 @@
-using System;
-using System.Threading.Tasks;
-using System.Collections.Generic;
+using ApiService.Infrastructure.Data;
 using BankingHub.Application.Interfaces;
 using MediatR;
-using Microsoft.Extensions.Logging; // Importante para logar o que acontece no processo
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
-namespace BankingHub.Application.Services
+namespace BankingHub.Application.Services;
+
+
+public class PixReconciliationService
 {
-    /// <summary>
-    /// Serviço responsável pela conciliação bancária dos pagamentos via Pix.
-    /// Ele serve como uma "rede de segurança" para atualizar cobranças pendentes caso o Webhook falhe.
-    /// </summary>
-    public class PixReconciliationService
-    {
-        private readonly IBankPixAdapter _bankPixAdapter;
-        private readonly IMediator _mediator;
-        private readonly INotificationService _notificationService;
-        private readonly ILogger<PixReconciliationService> _logger; // Registra logs para auditoria financeira
+    private readonly ApplicationDbContext _db;
+    private readonly IBankAdapterFactory _adapterFactory;
+    private readonly INotificationService _notificationService;
+    private readonly ILogger<PixReconciliationService> _logger;
 
-        // Injeção de dependência das interfaces necessárias
-        public PixReconciliationService(
-            IBankPixAdapter bankPixAdapter,
-            IMediator mediator,
-            INotificationService notificationService,
-            ILogger<PixReconciliationService> logger)
+    public PixReconciliationService(
+        ApplicationDbContext db,
+        IBankAdapterFactory adapterFactory,
+        INotificationService notificationService,
+        ILogger<PixReconciliationService> logger)
+    {
+        _db                  = db;
+        _adapterFactory      = adapterFactory;
+        _notificationService = notificationService;
+        _logger              = logger;
+    }
+
+    
+    public async Task ReconcilePendingPixChargesAsync(CancellationToken ct = default)
+    {
+        _logger.LogInformation("Iniciando o processo de conciliação de Pix...");
+
+        // Busca cobranças ativas com mais de 1 minuto — candidatas ao polling fallback
+        var cutoff = DateTime.UtcNow.AddMinutes(-1);
+        var pendingCharges = await _db.Cobrancas
+            .Where(c => (c.Status == "active" || c.Status == "created")
+                        && c.TxId != string.Empty
+                        && c.CreatedAt <= cutoff)
+            .AsNoTracking()
+            .ToListAsync(ct);
+
+        if (!pendingCharges.Any())
         {
-            _bankPixAdapter = bankPixAdapter;
-            _mediator = mediator;
-            _notificationService = notificationService;
-            _logger = logger;
+            _logger.LogInformation("Nenhuma cobrança Pix pendente para conciliação.");
+            return;
         }
 
-        /// <summary>
-        /// Executa a varredura e conciliação de todas as cobranças Pix que estão presas no status "Pendente".
-        /// </summary>
-        public async Task ReconcilePendingPixChargesAsync()
+        _logger.LogInformation(
+            "{Count} cobranças pendentes encontradas para conciliação.", pendingCharges.Count);
+
+        foreach (var charge in pendingCharges)
         {
-            _logger.LogInformation("Iniciando o processo de conciliação de Pix...");
+            if (ct.IsCancellationRequested) break;
 
             try
             {
-                // 1. BUSCA INTERNA:
-                // Dispara uma query (CQRS) para buscar no seu banco de dados as cobranças que ainda constam como pendentes.
-                // ADAPTAÇÃO: Se você não usa Mediator para queries, substitua por uma chamada direta ao seu repositório.
-                // Ex: var pendingCharges = await _pixRepository.GetPendingChargesAsync();
-                var pendingCharges = await _mediator.Send(new GetPendingPixChargesQuery());
+                _logger.LogInformation(
+                    "Verificando TxId={TxId} no banco...", charge.TxId);
 
-                if (pendingCharges == null || !pendingCharges.Any())
-                {
-                    _logger.LogInformation("Nenhuma cobrança Pix pendente encontrada para conciliação.");
-                    return;
-                }
+                // Determina o adapter — por ora ITAU (Fase 1); extensível via BankId futuro
+                var adapter    = _adapterFactory.Get("ITAU");
+                var chargeType = charge.ChargeType.ToUpperInvariant() == "COBV"
+                    ? PixChargeType.CobV
+                    : PixChargeType.Cob;
 
-                // 2. PROCESSAMENTO INDIVIDUAL:
-                // Iteramos sobre cada cobrança pendente para verificar o status real na API do Banco
-                foreach (var charge in pendingCharges)
+                // Consulta ativa ao banco — FONTE DE VERDADE
+                var bankStatus = await adapter.GetChargeStatusAsync(charge.TxId, chargeType, ct);
+
+                if (bankStatus.Status == PixChargeStatus.Paid)
                 {
-                    try
+                    _logger.LogWarning(
+                        "Inconsistência detectada: TxId={TxId} pago no banco mas pendente localmente. Conciliando...",
+                        charge.TxId);
+
+                    // Atualiza status no banco de dados
+                    var tracked = await _db.Cobrancas
+                        .FirstOrDefaultAsync(c => c.TxId == charge.TxId, ct);
+
+                    if (tracked is not null)
                     {
-                        _logger.LogInformation("Verificando status do Pix Id: {ChargeId} (TxId: {TxId}) no banco...", charge.Id, charge.TxId);
+                        tracked.Status    = "paid";
+                        tracked.UpdatedAt = DateTime.UtcNow;
+                        await _db.SaveChangesAsync(ct);
+                    }
 
-                        // 3. CONSULTA EXTERNA (API DO BANCO):
-                        // O Adapter traduz a chamada para o banco específico (Itaú, Inter, BB, etc) usando o TxId (Identificador do Pix)
-                        var bankStatus = await _bankPixAdapter.ConsultPixStatusAsync(charge.TxId);
+                    // Notifica via SignalR
+                    await _notificationService.NotifyPaymentConfirmedAsync(
+                        charge.InvoiceID,
+                        charge.TxId,
+                        bankStatus.PaidAmount ?? charge.Amount ?? 0m,
+                        ct);
+                }
+                else if (bankStatus.Status == PixChargeStatus.Expired
+                      || bankStatus.Status == PixChargeStatus.Canceled)
+                {
+                    var tracked = await _db.Cobrancas
+                        .FirstOrDefaultAsync(c => c.TxId == charge.TxId, ct);
 
-                        // 4. TOMADA DE DECISÃO (REGRAS DE NEGÓCIO):
-                        
-                        // Cenário A: O cliente pagou, mas o nosso sistema ainda não sabia
-                        if (bankStatus.IsPaid)
-                        {
-                            _logger.LogWarning("Inconsistência encontrada! Pix {ChargeId} foi PAGO no banco, mas constava como pendente. Conciliando...", charge.Id);
+                    if (tracked is not null)
+                    {
+                        tracked.Status    = bankStatus.Status.ToString().ToLower();
+                        tracked.UpdatedAt = DateTime.UtcNow;
+                        await _db.SaveChangesAsync(ct);
+                    }
 
-                            // Atualiza o status no nosso banco de dados para "Pago" (via Command
+                    _logger.LogInformation(
+                        "TxId={TxId} marcado como {Status} após conciliação.", charge.TxId, bankStatus.Status);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex, "Erro ao conciliar TxId={TxId}. Será tentado novamente.", charge.TxId);
+            }
+        }
+
+        _logger.LogInformation("Conciliação de Pix concluída.");
+    }
+}

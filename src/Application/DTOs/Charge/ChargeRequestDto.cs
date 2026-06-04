@@ -1,1 +1,11 @@
-//Criei esse arquivo, pois o git so considera pastas com arquivos então para a pasta ir para o repositorio fiz esse arquivo vazio, ele não tem nenhuma função
+namespace BankingHub.Application.DTOs;
+
+
+public sealed record ChargeRequestDto(
+    Guid InvoiceId,
+    string ChargeType,
+    decimal Amount,
+    string PixKey,
+    DateOnly? DueDate,
+    int? ExpiresInSeconds,
+    string? PayerMessage);
