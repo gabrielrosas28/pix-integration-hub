@@ -2,7 +2,7 @@ using ApiService.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Domain.Aggregates.Invoice;
 using Domain.Aggregates.PixCharge;
-using Domain.Aggregates.Secret;
+using Domain.Aggregates.Credential; // Alterado de Domain.Aggregates.Secret
 using Infrastructure.Data.Context.Configurations;
 
 namespace ApiService.Infrastructure.Data;
@@ -15,7 +15,7 @@ public class ApplicationDbContext : DbContext
     }
 
     public DbSet<Conta> Contas => Set<Conta>();
-    public DbSet<Secret> Secrets => Set<Secret>();
+    public DbSet<Credential> Credentials => Set<Credential>(); // Alterado de DbSet<Secret> Secrets
     public DbSet<ChavePix> ChavesPix => Set<ChavePix>();
     public DbSet<Auditoria> Auditorias => Set<Auditoria>();
     public DbSet<Cobranca> Cobrancas => Set<Cobranca>();
@@ -27,11 +27,12 @@ public class ApplicationDbContext : DbContext
     {
         modelBuilder.Entity<Conta>().HasKey(c => c.Id);
 
-        modelBuilder.Entity<Secret>().HasKey(s => s.Id);
+        // Mapeia a nova classe de agregação Credential
+        modelBuilder.Entity<Credential>().HasKey(s => s.Id); // Alterado de Secret para Credential
 
-        // Relacionamento entre Conta e Secret será tratado via SecretId (Foreign Key)
+        // Relacionamento entre Conta e Credential tratado via CredentialId (Foreign Key)
         modelBuilder.Entity<Conta>()
-            .Property(c => c.SecretId)
+            .Property(c => c.CredentialId) // Alterado de SecretId para CredentialId
             .IsRequired(false);
         
         modelBuilder.Entity<ChavePix>()
