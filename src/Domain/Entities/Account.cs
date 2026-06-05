@@ -6,8 +6,8 @@ public class Conta
 
     public int ClientId { get; set; }
 
-    public int? SecretId { get; set; }
-    public Secret? Secret { get; set; }
+    public int? CredentialId { get; set; } // Alterado de SecretId para CredentialId
+    public Credential? Credential { get; set; } // Alterado de Secret? Secret para Credential? Credential
 
     public string Documento { get; set; } = string.Empty;
 
@@ -16,5 +16,4 @@ public class Conta
     public string NumeroConta { get; set; } = string.Empty;
 
     public string Agencia { get; set; } = string.Empty;
-
 }

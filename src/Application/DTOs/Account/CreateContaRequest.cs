@@ -2,7 +2,7 @@ namespace Application.DTOs;
 
 public class CreateContaRequest
 {
-    public int SecretId { get; set; }
+    public int CredentialId { get; set; }
 
     public string Documento { get; set; } = string.Empty;
 
