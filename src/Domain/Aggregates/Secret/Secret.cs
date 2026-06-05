@@ -1,34 +1,34 @@
 using Domain.Exceptions;
 using Domain;
 
-namespace Domain.Aggregates.Secret;
+namespace Domain.Aggregates.Credential; // Alterado o namespace de Secret para Credential
 
-// 1. O ID Fortemente Tipado
-public sealed record SecretId
+// 1. O ID Fortemente Tipado (Alterado de SecretId para CredentialId)
+public sealed record CredentialId
 {
     public Guid Value { get; }
-    private SecretId(Guid value) => Value = value;
-    public static SecretId CreateNew() => new(Guid.NewGuid());
-    public static SecretId From(Guid value) => new(value);
+    private CredentialId(Guid value) => Value = value;
+    public static CredentialId CreateNew() => new(Guid.NewGuid());
+    public static CredentialId From(Guid value) => new(value);
     public override string ToString() => Value.ToString();
 }
 
-// 2. A Raiz de Agregação (Aggregate Root)
-public class Secret : AggregateRoot<SecretId>
+// 2. A Raiz de Agregação (Aggregate Root) (Alterado de Secret para Credential)
+public class Credential : AggregateRoot<CredentialId>
 {
-    // Mantivemos o ClientId como int para bater com a propriedade da Account, 
-    // mas o ideal futuro seria usar o AccountId / ClientId fortemente tipado.
+    // Mantivemos o ClientId como int para bater com a propriedade da Account
     public int ClientId { get; private set; } 
     
+    // Como conversamos sobre o conceito, esta propriedade guarda o "segredo" dentro da Credencial
     public string ClientSecret { get; private set; } = null!;
     public string Certificate { get; private set; } = null!;
     public string CertificatePassword { get; private set; } = null!;
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
 
-    private Secret() { } // Construtor exigido pelo EF Core
+    private Credential() { } // Construtor exigido pelo EF Core
 
-    public static Secret Create(
+    public static Credential Create(
         int clientId, 
         string clientSecret, 
         string certificate, 
@@ -46,9 +46,9 @@ public class Secret : AggregateRoot<SecretId>
         if (string.IsNullOrWhiteSpace(certificatePassword))
             throw new DomainException("Certificate password is required.");
 
-        return new Secret
+        return new Credential
         {
-            Id = SecretId.CreateNew(),
+            Id = CredentialId.CreateNew(), // Alterado para CredentialId
             ClientId = clientId,
             ClientSecret = clientSecret,
             Certificate = certificate,

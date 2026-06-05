@@ -6,7 +6,7 @@
   "httpResponse": {
     "statusCode": 200,
     "headers": [ { "name": "Content-Type", "values": ["application/json"] } ],
-    "body": "{\"id\":1,\"clientId\":1,\"secretId\":1,\"documento\":\"12345678900\",\"bankId\":1,\"numeroConta\":\"00012345\",\"agencia\":\"0009\"}"
+    "body": "{\"id\":1,\"clientId\":1,\"credentialId\":1,\"documento\":\"12345678900\",\"bankId\":1,\"numeroConta\":\"00012345\",\"agencia\":\"0009\"}"
   },
   "times": { "unlimited": true }
 }

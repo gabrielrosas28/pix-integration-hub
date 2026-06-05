@@ -5,14 +5,16 @@ using Microsoft.EntityFrameworkCore;
 using Domain.Aggregates.PixCharge;
 using Domain.Repositories;
 using Domain.ValueObjects;
+using BankingHub.Domain.ValueObjects;
+using ApiService.Infrastructure.Data;
 
 namespace Infrastructure.Persistence.Repositories;
 
 public sealed class PixChargeRepository : IPixChargeRepository
 {
-    private readonly BankingDbContext _context;
+    private readonly ApplicationDbContext _context;
 
-    public PixChargeRepository(BankingDbContext context)
+    public PixChargeRepository(ApplicationDbContext context)
     {
         _context = context;
     }

@@ -2,7 +2,7 @@ namespace Application.DTOs;
 
 public class UpdateContaRequest
 {
-    public int SecretId { get; set; }
+    public int CredentialId { get; set; }
     public string Documento { get; set; } = string.Empty;
 
     public int BankId { get; set; }

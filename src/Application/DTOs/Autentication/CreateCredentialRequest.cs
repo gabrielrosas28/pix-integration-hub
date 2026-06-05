@@ -1,10 +1,10 @@
 namespace Application.DTOs;
 
-public class UpdateSecretRequest
+public class CreateCredentialRequest // Alterado de CreateSecretRequest
 {
     public int ClientId { get; set; }
 
-    public string ClienteSecret { get; set; } = string.Empty;
+    public string ClientSecretValue { get; set; } = string.Empty; // Alterado de ClienteSecret para ClientSecretValue
 
     public string Certificado { get; set; } = string.Empty;
 

@@ -9,6 +9,7 @@ using Infrastructure.Messaging.RabbitMQ;
 using Application.Interfaces;
 using Infrastructure.Services;
 using Application.DTOs;
+
 // Teste de envio de mensagem para RabbitMQ
 try
 {
@@ -24,11 +25,11 @@ catch (Exception ex)
 {
     Console.WriteLine($"RabbitMQ test send failed: {ex.Message}");
 }
-// FIm do teste
+// Fim do teste
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 builder.Services.Configure<MockServerOptions>(builder.Configuration.GetSection("ExternalServices:MockServer"));
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -45,9 +46,10 @@ builder.Services.AddHttpClient<IMockPaymentGateway, MockPaymentGateway>((service
     var mockServerOptions = serviceProvider.GetRequiredService<IOptions<MockServerOptions>>().Value;
     httpClient.BaseAddress = new Uri(mockServerOptions.BaseUrl, UriKind.Absolute);
 });
+
 builder.Services.AddScoped<ProcessMockPaymentUseCase>();
 builder.Services.AddScoped<IContaService, ContaService>();
-builder.Services.AddScoped<ISecretService, SecretService>();
+builder.Services.AddScoped<ICredentialService, CredentialService>(); // Alterado de ISecretService/SecretService
 builder.Services.AddScoped<IChavePixService, ChavePixService>();
 builder.Services.AddScoped<ICobrancaService, Infrastructure.Services.CobrancaService>();
 
@@ -69,7 +71,7 @@ var summaries = new[]
 
 app.MapGet("/weatherforecast", () =>
 {
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
+    var forecast = Enumerable.Range(1, 5).Select(index =>
         new WeatherForecast
         (
             DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
@@ -140,30 +142,59 @@ app.MapDelete("/contas/{id}", async (
     return Results.NoContent();
 });
 
-app.MapGet("/secrets", async (ISecretService secretService) =>
+// --- Endpoints de Credentials (antigo /secrets) ---
+
+app.MapGet("/credentials", async (ICredentialService credentialService) => // Alterado rota e interface
 {
-    var list = await secretService.GetAllAsync();
+    var list = await credentialService.GetAllAsync();
     return Results.Ok(list);
 });
 
-app.MapGet("/secrets/{id}", async (int id, ISecretService secretService) =>
+app.MapGet("/credentials/{id}", async (int id, ICredentialService credentialService) => // Alterado rota e interface
 {
-    var secret = await secretService.GetByIdAsync(id);
+    var credential = await credentialService.GetByIdAsync(id); // Alterado nome da variável
 
-    if (secret is null)
+    if (credential is null)
         return Results.NotFound();
 
-    return Results.Ok(secret);
+    return Results.Ok(credential);
 });
 
-app.MapPost("/secrets", async (
-    CreateSecretRequest request,
-    ISecretService secretService) =>
+app.MapPost("/credentials", async (
+    CreateCredentialRequest request, // Alterado tipo do request
+    ICredentialService credentialService) => // Alterado interface
 {
-    var secret = await secretService.CreateAsync(request);
+    var credential = await credentialService.CreateAsync(request); // Alterado variável e chamada
 
-    return Results.Ok(secret);
+    return Results.Ok(credential);
 });
+
+app.MapPut("/credentials/{id}", async (
+    int id,
+    UpdateCredentialRequest request, // Alterado tipo do request
+    ICredentialService credentialService) => // Alterado interface
+{
+    var credential = await credentialService.UpdateAsync(id, request); // Alterado variável e chamada
+
+    if (credential is null)
+        return Results.NotFound();
+
+    return Results.Ok(credential);
+});
+
+app.MapDelete("/credentials/{id}", async (
+    int id,
+    ICredentialService credentialService) => // Alterado interface
+{
+    var deleted = await credentialService.DeleteAsync(id);
+
+    if (!deleted)
+        return Results.NotFound();
+
+    return Results.NoContent();
+});
+
+// --- Fim dos Endpoints de Credentials ---
 
 app.MapPost("/cobranca/v1/cob", async (
     Application.DTOs.CreateCobRequest request,
@@ -188,31 +219,6 @@ app.MapPost("/cobranca/v1/cobv", async (
     {
         return Results.BadRequest(new { error = ex.Message });
     }
-});
-
-app.MapPut("/secrets/{id}", async (
-    int id,
-    UpdateSecretRequest request,
-    ISecretService secretService) =>
-{
-    var secret = await secretService.UpdateAsync(id, request);
-
-    if (secret is null)
-        return Results.NotFound();
-
-    return Results.Ok(secret);
-});
-
-app.MapDelete("/secrets/{id}", async (
-    int id,
-    ISecretService secretService) =>
-{
-    var deleted = await secretService.DeleteAsync(id);
-
-    if (!deleted)
-        return Results.NotFound();
-
-    return Results.NoContent();
 });
 
 app.Run();

@@ -27,38 +27,38 @@ public class ContaService : IContaService
 
     public async Task<Conta> CreateAsync(CreateContaRequest request)
     {
-    var conta = new Conta
-    {
-        SecretId = request.SecretId,
-        Documento = request.Documento,
-        BankId = request.BankId,
-        NumeroConta = request.NumeroConta,
-        Agencia = request.Agencia
-    };
+        var conta = new Conta
+        {
+            CredentialId = request.CredentialId, // Alterado de SecretId para CredentialId
+            Documento = request.Documento,
+            BankId = request.BankId,
+            NumeroConta = request.NumeroConta,
+            Agencia = request.Agencia
+        };
 
-    _context.Contas.Add(conta);
+        _context.Contas.Add(conta);
 
-    await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync();
 
-    return conta;
+        return conta;
     }
 
     public async Task<Conta?> UpdateAsync(int id, UpdateContaRequest request)
     {
-    var conta = await _context.Contas.FindAsync(id);
+        var conta = await _context.Contas.FindAsync(id);
 
-    if (conta == null)
-        return null;
+        if (conta == null)
+            return null;
 
-    conta.SecretId = request.SecretId;
-    conta.Documento = request.Documento;
-    conta.BankId = request.BankId;
-    conta.NumeroConta = request.NumeroConta;
-    conta.Agencia = request.Agencia;
+        conta.CredentialId = request.CredentialId; // Alterado de SecretId para CredentialId
+        conta.Documento = request.Documento;
+        conta.BankId = request.BankId;
+        conta.NumeroConta = request.NumeroConta;
+        conta.Agencia = request.Agencia;
 
-    await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync();
 
-    return conta;
+        return conta;
     }
 
     public async Task<bool> DeleteAsync(int id)
