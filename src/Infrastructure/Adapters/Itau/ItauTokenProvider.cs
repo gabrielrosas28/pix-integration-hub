@@ -70,7 +70,7 @@ public sealed class ItauTokenProvider : IItauTokenProvider
 
         // OAuth2 client_credentials
         var credentials = Convert.ToBase64String(
-            Encoding.UTF8.GetBytes($"{_options.ClientId}:{_options.ClientSecret}"));
+            Encoding.UTF8.GetBytes($"{_options.ClientId}:{_options.ClientCredential}"));
 
         request.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
 

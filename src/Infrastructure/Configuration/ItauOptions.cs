@@ -13,7 +13,7 @@ public class ItauOptions
     /// <summary>
     /// Segredo do cliente OAuth2.
     /// </summary>
-    public string ClientSecret { get; set; } = string.Empty;
+    public string ClientCredential { get; set; } = string.Empty;
 
     /// <summary>
     /// URL do endpoint de tokens OAuth2.
