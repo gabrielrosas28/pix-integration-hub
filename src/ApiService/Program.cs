@@ -2,6 +2,7 @@ using ApiService.Application.MockPayments;
 using ApiService.Infrastructure.Configuration;
 using ApiService.Infrastructure.Data;
 using ApiService.Infrastructure.MockPayments;
+using Asp.Versioning;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Infrastructure.Messaging.RabbitMQ;
@@ -32,6 +33,13 @@ builder.Services.AddOpenApi();
 builder.Services.Configure<MockServerOptions>(builder.Configuration.GetSection("ExternalServices:MockServer"));
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddControllers();
+builder.Services.AddApiVersioning(options =>
+{
+    options.DefaultApiVersion = new ApiVersion(1, 0);
+    options.AssumeDefaultVersionWhenUnspecified = true;
+    options.ReportApiVersions = true;
+});
 builder.Services.AddHttpClient<IMockPaymentGateway, MockPaymentGateway>((serviceProvider, httpClient) =>
 {
     var mockServerOptions = serviceProvider.GetRequiredService<IOptions<MockServerOptions>>().Value;
@@ -51,6 +59,7 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+app.MapControllers();
 app.UseHttpsRedirection();
 
 var summaries = new[]
