@@ -1,3 +1,4 @@
+// Domain/ValueObjects/EmvCode.cs
 using Domain.Exceptions;
 
 namespace Domain.ValueObjects;
@@ -17,6 +18,5 @@ public sealed record EmvCode
     }
 
     public override string ToString() => Value;
-
     public static implicit operator string(EmvCode emvCode) => emvCode.Value;
 }

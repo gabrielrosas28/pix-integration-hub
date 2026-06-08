@@ -1,92 +1,166 @@
-using Application.Interfaces;
-using Application.MockPayments;
-using Infrastructure.Adapters.Abstractions;
-using Infrastructure.Adapters.Itau;
-using Infrastructure.Configuration;
-using Infrastructure.MockPayments;
-using Infrastructure.Persistence;
-using Infrastructure.Services;
+using ApiService.Application.MockPayments;
+using ApiService.Infrastructure.Configuration;
+using ApiService.Infrastructure.Data;
+using ApiService.Infrastructure.MockPayments;
+using Asp.Versioning;
 using Microsoft.EntityFrameworkCore;
-using ApiService.Middleware;
+using Microsoft.Extensions.Options;
+using Infrastructure.Messaging.RabbitMQ;
+using Application.Interfaces;
+using Infrastructure.Services;
+using Application.DTOs;
+
+// Teste de envio de mensagem para RabbitMQ
+try
+{
+    var producer = new RabbitMqProducer();
+    await producer.SendMessageAsync(new PaymentCreatedMessage
+    {
+        UserId = 1,
+        Amount = 100
+    });
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"RabbitMQ test send failed: {ex.Message}");
+}
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ====== Database ======
+builder.Services.AddOpenApi();
+builder.Services.Configure<MockServerOptions>(builder.Configuration.GetSection("ExternalServices:MockServer"));
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddControllers();
+builder.Services.AddApiVersioning(options =>
+{
+    options.DefaultApiVersion = new ApiVersion(1, 0);
+    options.AssumeDefaultVersionWhenUnspecified = true;
+    options.ReportApiVersions = true;
+});
+builder.Services.AddHttpClient<IMockPaymentGateway, MockPaymentGateway>((serviceProvider, httpClient) =>
+{
+    var mockServerOptions = serviceProvider.GetRequiredService<IOptions<MockServerOptions>>().Value;
+    httpClient.BaseAddress = new Uri(mockServerOptions.BaseUrl, UriKind.Absolute);
+});
 
-builder.Services.AddScoped<IUnitOfWork, EfUnitOfWork>();
-
-// ====== Options ======
-builder.Services.Configure<ItauOptions>(builder.Configuration.GetSection("Itau"));
-builder.Services.Configure<MockServerOptions>(builder.Configuration.GetSection("ExternalServices:MockServer"));
-builder.Services.Configure<RabbitMqOptions>(builder.Configuration.GetSection("RabbitMq"));
-
-// ====== Application Services ======
+builder.Services.AddScoped<ProcessMockPaymentUseCase>();
 builder.Services.AddScoped<IAccountService, AccountService>();
-builder.Services.AddScoped<ISecretService, SecretService>();
+builder.Services.AddScoped<ICredentialService, CredentialService>();
 builder.Services.AddScoped<IPixKeyService, PixKeyService>();
 builder.Services.AddScoped<IChargeService, ChargeService>();
 
-// ====== Bank Adapters ======
-builder.Services.AddHttpClient<IItauTokenProvider, ItauTokenProvider>();
-builder.Services.AddHttpClient<IBankPixAdapter, ItauPixAdapter>();
-builder.Services.AddSingleton<IBankAdapterFactory, BankAdapterFactory>();
-
-// ====== Mock Payment Gateway ======
-builder.Services.AddHttpClient<IMockPaymentGateway, MockPaymentGateway>((sp, http) =>
-{
-    var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<MockServerOptions>>().Value;
-    http.BaseAddress = new Uri(options.BaseUrl, UriKind.Absolute);
-});
-builder.Services.AddScoped<ProcessMockPaymentUseCase>();
-
-// ====== MediatR (CQRS) ======
-builder.Services.AddMediatR(cfg =>
-{
-    cfg.RegisterServicesFromAssemblies(
-        typeof(Application.Commands.CreatePixCharge.CreatePixChargeCommand).Assembly,
-        typeof(Application.Commands.CreateInvoice.CreateInvoiceCommand).Assembly);
-    cfg.AddOpenBehavior(typeof(Application.Behaviors.ValidationBehavior<,>));
-    cfg.AddOpenBehavior(typeof(Application.Behaviors.LoggingBehavior<,>));
-});
-
-// ====== FluentValidation ======
-builder.Services.AddValidatorsFromAssemblyContaining<
-    Application.Commands.CreatePixCharge.CreatePixChargeValidator>();
-
-// ====== Controllers + JSON ======
-builder.Services.AddControllers()
-    .AddJsonOptions(o =>
-    {
-        o.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
-        o.JsonSerializerOptions.DefaultIgnoreCondition =
-            System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
-    });
-
-// ====== OpenAPI ======
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddOpenApi();
-
 var app = builder.Build();
 
-// ====== Middleware pipeline ======
-app.UseMiddleware<ExceptionMiddleware>();
-
 if (app.Environment.IsDevelopment())
+{
     app.MapOpenApi();
+}
 
-app.UseHttpsRedirection();
 app.MapControllers();
+app.UseHttpsRedirection();
 
-// ====== Minimal API endpoints for mock payments ======
 app.MapPost("/payments/mock", async (
     CreateMockPaymentRequest request,
     ProcessMockPaymentUseCase useCase,
+    CancellationToken cancellationToken) =>
+{
+    var response = await useCase.ExecuteAsync(request, cancellationToken);
+    return Results.Ok(response);
+});
+
+// Accounts
+app.MapGet("/accounts", async (IAccountService accountService) =>
+{
+    var accounts = await accountService.GetAllAsync();
+    return Results.Ok(accounts);
+});
+
+app.MapGet("/accounts/{id}", async (int id, IAccountService accountService) =>
+{
+    var account = await accountService.GetByIdAsync(id);
+    if (account is null) return Results.NotFound();
+    return Results.Ok(account);
+});
+
+app.MapPost("/accounts", async (CreateAccountRequest request, IAccountService accountService) =>
+{
+    var account = await accountService.CreateAsync(request);
+    return Results.Ok(account);
+});
+
+app.MapPut("/accounts/{id}", async (int id, UpdateAccountRequest request, IAccountService accountService) =>
+{
+    var account = await accountService.UpdateAsync(id, request);
+    if (account is null) return Results.NotFound();
+    return Results.Ok(account);
+});
+
+app.MapDelete("/accounts/{id}", async (int id, IAccountService accountService) =>
+{
+    var deleted = await accountService.DeleteAsync(id);
+    if (!deleted) return Results.NotFound();
+    return Results.NoContent();
+});
+
+// Credentials
+app.MapGet("/credentials", async (ICredentialService credentialService) =>
+{
+    var list = await credentialService.GetAllAsync();
+    return Results.Ok(list);
+});
+
+app.MapGet("/credentials/{id}", async (int id, ICredentialService credentialService) =>
+{
+    var credential = await credentialService.GetByIdAsync(id);
+    if (credential is null) return Results.NotFound();
+    return Results.Ok(credential);
+});
+
+app.MapPost("/credentials", async (CreateCredentialRequest request, ICredentialService credentialService) =>
+{
+    var credential = await credentialService.CreateAsync(request);
+    return Results.Ok(credential);
+});
+
+app.MapPut("/credentials/{id}", async (int id, UpdateCredentialRequest request, ICredentialService credentialService) =>
+{
+    var credential = await credentialService.UpdateAsync(id, request);
+    if (credential is null) return Results.NotFound();
+    return Results.Ok(credential);
+});
+
+app.MapDelete("/credentials/{id}", async (int id, ICredentialService credentialService) =>
+{
+    var deleted = await credentialService.DeleteAsync(id);
+    if (!deleted) return Results.NotFound();
+    return Results.NoContent();
+});
+
+// Charges
+app.MapPost("/cobranca/v1/cob", async (
+    CreateCobRequest request,
+    IChargeService chargeService,
     CancellationToken ct) =>
 {
-    var response = await useCase.ExecuteAsync(request, ct);
-    return Results.Ok(response);
+    var response = await chargeService.CreateCobAsync(request, ct);
+    return Results.Created($"/cobranca/v1/{response.TxId}", response);
+});
+
+app.MapPost("/cobranca/v1/cobv", async (
+    CreateCobvRequest request,
+    IChargeService chargeService,
+    CancellationToken ct) =>
+{
+    try
+    {
+        var response = await chargeService.CreateCobvAsync(request, ct);
+        return Results.Created($"/cobranca/v1/{response.TxId}", response);
+    }
+    catch (ArgumentException ex)
+    {
+        return Results.BadRequest(new { error = ex.Message });
+    }
 });
 
 app.Run();

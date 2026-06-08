@@ -1,33 +1,52 @@
 using System.Text.Json;
-using Domain.Aggregates.PixCharge;
 
-namespace Application.Interfaces;
+namespace BankingHub.Application.Interfaces;
 
 /// <summary>
-/// Contract for bank adapters.
-/// RULE: This interface must remain stable when adding new banks.
-/// Each bank implements it, translating their specifics into normalized DTOs.
+/// Contrato do Adapter Bancário.
+/// REGRA: Esta interface é estável e não deve mudar ao adicionar novos bancos.
+/// Cada banco implementa esta interface traduzindo suas peculiaridades
+/// para os DTOs normalizados.
 /// </summary>
 public interface IBankPixAdapter
 {
+    /// <summary>Identificador único do banco (ex: "ITAU", "BB", "BRADESCO").</summary>
     string BankId { get; }
+
+    /// <summary>Indica se o banco suporta Cob (cobrança imediata).</summary>
     bool SupportsCob { get; }
+
+    /// <summary>Indica se o banco suporta CobV (cobrança com vencimento).</summary>
     bool SupportsCobV { get; }
 
-    Task<ChargeResponse> CreateCobAsync(ChargeRequest request, CancellationToken ct = default);
-    Task<ChargeResponse> CreateCobVAsync(ChargeRequest request, CancellationToken ct = default);
-    Task<QrCodeResponse> GetQrCodeAsync(string txId, PixChargeType type, CancellationToken ct = default);
+    /// <summary>Cria uma cobrança Pix imediata (Cob).</summary>
+    Task<ChargeResponse> CreateCobAsync(ChargeRequest request, CancellationToken ct);
+
+    /// <summary>Cria uma cobrança Pix com vencimento (CobV).</summary>
+    Task<ChargeResponse> CreateCobVAsync(ChargeRequest request, CancellationToken ct);
+
+    /// <summary>Obtém o QR Code (EMV + Pix Link) de uma cobrança.</summary>
+    Task<QrCodeResponse> GetQrCodeAsync(string txId, PixChargeType type, CancellationToken ct);
 
     /// <summary>
-    /// Queries the bank for the definitive payment status.
-    /// CRITICAL: This is the only authoritative confirmation of payment.
+    /// Consulta o status atual de uma cobrança.
+    /// Este é o método que valida definitivamente se um Pix foi pago.
     /// </summary>
-    Task<ChargeStatusResponse> GetChargeStatusAsync(string txId, PixChargeType type, CancellationToken ct = default);
+    Task<ChargeStatusResponse> GetChargeStatusAsync(string txId, PixChargeType type, CancellationToken ct);
 
+    /// <summary>Valida autenticidade do webhook (assinatura, mTLS, IP, etc).</summary>
     bool ValidateWebhook(IReadOnlyDictionary<string, string> headers, JsonElement body);
+
+    /// <summary>
+    /// Parseia o payload do webhook para evento normalizado.
+    /// IMPORTANTE: Não confiar neste evento para baixa — sempre validar via GetChargeStatusAsync.
+    /// </summary>
     WebhookEvent ParseWebhookEvent(JsonElement body);
 }
 
+/// <summary>
+/// Factory para obter o adapter correto baseado no BankId.
+/// </summary>
 public interface IBankAdapterFactory
 {
     IBankPixAdapter Get(string bankId);
@@ -35,12 +54,19 @@ public interface IBankAdapterFactory
     bool IsSupported(string bankId);
 }
 
-public interface IUnitOfWork
+/// <summary>
+/// Serviço de notificações em tempo real (SignalR).
+/// </summary>
+public interface INotificationService
 {
-    Task SaveChangesAsync(CancellationToken ct = default);
+    Task NotifyPaymentConfirmedAsync(
+        string invoiceId,
+        string txId,
+        decimal amount,
+        CancellationToken ct);
 }
 
-// Normalized DTOs shared between Application and Infrastructure layers
+
 
 public sealed record ChargeRequest(
     string TxId,
@@ -77,4 +103,8 @@ public sealed record WebhookEvent(
     DateTimeOffset ReceivedAt,
     object Raw);
 
+
+
+public enum PixChargeType    { Cob, CobV }
+public enum PixChargeStatus  { Active, Paid, Expired, Canceled, Unknown }
 public enum WebhookEventType { PaymentConfirmed, PaymentCanceled, Unknown }

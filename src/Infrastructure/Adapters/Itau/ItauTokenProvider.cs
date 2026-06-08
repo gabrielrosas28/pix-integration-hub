@@ -1,20 +1,17 @@
+// BankingHub.Infrastructure/BankAdapters/Itau/ItauTokenProvider.cs
+
+using Infrastructure.BankAdapters.Itau;
+using BankingHub.Infrastructure.Configuration;
+using Microsoft.Extensions.Logging;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
-using Infrastructure.Configuration;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
-namespace Infrastructure.Adapters.Itau;
-
-public interface IItauTokenProvider
-{
-    Task<string> GetAccessTokenAsync(CancellationToken ct = default);
-}
+namespace Infrastructure.BankAdapters.Itau;
 
 /// <summary>
-/// Manages Itaú OAuth2 tokens with automatic in-memory caching.
-/// Renews the token automatically before expiry.
+/// Gerencia tokens OAuth2 do Itaú com cache automático.
+/// Renova o token automaticamente antes de expirar.
 /// </summary>
 public sealed class ItauTokenProvider : IItauTokenProvider
 {
@@ -22,32 +19,35 @@ public sealed class ItauTokenProvider : IItauTokenProvider
     private readonly ItauOptions _options;
     private readonly ILogger<ItauTokenProvider> _logger;
 
+    // Cache em memória (para produção, considere distributed cache)
     private string? _cachedToken;
     private DateTimeOffset _expiresAt = DateTimeOffset.MinValue;
     private readonly SemaphoreSlim _lock = new(1, 1);
 
     public ItauTokenProvider(
         HttpClient http,
-        IOptions<ItauOptions> options,
+        ItauOptions options,
         ILogger<ItauTokenProvider> logger)
     {
         _http = http;
-        _options = options.Value;
+        _options = options;
         _logger = logger;
     }
 
     public async Task<string> GetAccessTokenAsync(CancellationToken ct)
     {
+        // Verifica cache (com margem de 30 segundos)
         if (!string.IsNullOrWhiteSpace(_cachedToken)
             && DateTimeOffset.UtcNow < _expiresAt.AddSeconds(-30))
         {
             return _cachedToken;
         }
 
+        // Lock para evitar múltiplas renovações simultâneas
         await _lock.WaitAsync(ct);
         try
         {
-            // Double-check after acquiring lock
+            // Double-check após obter lock
             if (!string.IsNullOrWhiteSpace(_cachedToken)
                 && DateTimeOffset.UtcNow < _expiresAt.AddSeconds(-30))
             {
@@ -64,14 +64,16 @@ public sealed class ItauTokenProvider : IItauTokenProvider
 
     private async Task<string> RefreshTokenAsync(CancellationToken ct)
     {
-        _logger.LogDebug("Refreshing Itaú OAuth2 token.");
+        _logger.LogDebug("Renovando token OAuth2 do Itaú");
 
         using var request = new HttpRequestMessage(HttpMethod.Post, _options.TokenUrl);
 
+        // OAuth2 client_credentials
         var credentials = Convert.ToBase64String(
-            Encoding.UTF8.GetBytes($"{_options.ClientId}:{_options.ClientSecret}"));
+            Encoding.UTF8.GetBytes($"{_options.ClientId}:{_options.ClientCredential}"));
 
         request.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
+
         request.Content = new FormUrlEncodedContent(new Dictionary<string, string>
         {
             ["grant_type"] = "client_credentials",
@@ -85,7 +87,7 @@ public sealed class ItauTokenProvider : IItauTokenProvider
         using var doc = JsonDocument.Parse(json);
 
         _cachedToken = doc.RootElement.GetProperty("access_token").GetString()
-            ?? throw new InvalidOperationException("Token missing in Itaú response.");
+            ?? throw new InvalidOperationException("Token ausente na resposta do Itaú");
 
         var expiresIn = doc.RootElement.TryGetProperty("expires_in", out var ei)
             ? ei.GetInt32()
@@ -93,7 +95,7 @@ public sealed class ItauTokenProvider : IItauTokenProvider
 
         _expiresAt = DateTimeOffset.UtcNow.AddSeconds(Math.Max(60, expiresIn));
 
-        _logger.LogInformation("Itaú token refreshed, expires at {ExpiresAt}", _expiresAt);
+        _logger.LogInformation("Token Itaú renovado, expira em {ExpiresAt}", _expiresAt);
 
         return _cachedToken;
     }

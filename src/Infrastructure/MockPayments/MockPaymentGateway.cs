@@ -1,35 +1,44 @@
 using System.Net.Http.Json;
-using Application.MockPayments;
-using Infrastructure.Configuration;
+using ApiService.Application.MockPayments;
+using ApiService.Infrastructure.Configuration;
 using Microsoft.Extensions.Options;
 
-namespace Infrastructure.MockPayments;
+namespace ApiService.Infrastructure.MockPayments;
 
 public sealed class MockPaymentGateway : IMockPaymentGateway
 {
-    private readonly HttpClient _http;
+    private readonly HttpClient httpClient;
+    private readonly MockServerOptions options;
 
-    public MockPaymentGateway(HttpClient http, IOptions<MockServerOptions> options)
+    public MockPaymentGateway(HttpClient httpClient, IOptions<MockServerOptions> options)
     {
-        _http = http;
-        if (_http.BaseAddress is null)
-            _http.BaseAddress = new Uri(options.Value.BaseUrl, UriKind.Absolute);
+        this.httpClient = httpClient;
+        this.options = options.Value;
+
+        if (this.httpClient.BaseAddress is null)
+        {
+            this.httpClient.BaseAddress = new Uri(this.options.BaseUrl, UriKind.Absolute);
+        }
     }
 
-    public async Task<MockPaymentResponse> SendAsync(
-        CreateMockPaymentRequest request, CancellationToken ct)
+    public async Task<MockPaymentResponse> SendAsync(CreateMockPaymentRequest request, CancellationToken cancellationToken)
     {
         var path = request.Scenario switch
         {
-            MockPaymentScenario.Error   => "/psp/pay/error",
+            MockPaymentScenario.Error => "/psp/pay/error",
             MockPaymentScenario.Timeout => "/psp/pay/timeout",
-            _                          => "/psp/pay"
+            _ => "/psp/pay"
         };
 
-        using var response = await _http.PostAsJsonAsync(path, request, ct);
-        var body = await response.Content.ReadFromJsonAsync<MockPaymentResponse>(cancellationToken: ct);
+        using var response = await httpClient.PostAsJsonAsync(path, request, cancellationToken);
+        var body = await response.Content.ReadFromJsonAsync<MockPaymentResponse>(cancellationToken: cancellationToken);
 
-        return body ?? new MockPaymentResponse(
+        if (body is not null)
+        {
+            return body;
+        }
+
+        return new MockPaymentResponse(
             response.IsSuccessStatusCode ? "approved" : "error",
             string.Empty,
             response.ReasonPhrase);

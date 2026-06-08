@@ -1,45 +1,33 @@
 using System.Text;
 using System.Text.Json;
-using Infrastructure.Configuration;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 
 namespace Infrastructure.Messaging.RabbitMQ;
 
-public sealed record PaymentCreatedMessage(int UserId, decimal Amount);
-
-public sealed class RabbitMqProducer
+public class RabbitMqProducer
 {
-    private readonly RabbitMqOptions _options;
-    private readonly ILogger<RabbitMqProducer> _logger;
-
-    public RabbitMqProducer(IOptions<RabbitMqOptions> options, ILogger<RabbitMqProducer> logger)
+    public async Task SendMessageAsync(PaymentCreatedMessage message)
     {
-        _options = options.Value;
-        _logger = logger;
-    }
-
-    public async Task SendMessageAsync(PaymentCreatedMessage message, CancellationToken ct = default)
-    {
-        var factory = new ConnectionFactory
+        var factory = new ConnectionFactory()
         {
-            HostName = _options.HostName,
-            Port = _options.Port,
-            UserName = _options.UserName,
-            Password = _options.Password
+            HostName = "localhost",
+            Port = 5672,
+            UserName = "guest",
+            Password = "guest"
         };
 
-        await using var connection = await factory.CreateConnectionAsync(ct);
-        await using var channel = await connection.CreateChannelAsync(cancellationToken: ct);
+        await using var connection = await factory.CreateConnectionAsync();
+        await using var channel = await connection.CreateChannelAsync();
 
-        await channel.QueueDeclareAsync(_options.QueueName, durable: false, exclusive: false, autoDelete: false, cancellationToken: ct);
+        var queueName = "payment-queue";
+
+        await channel.QueueDeclareAsync(queueName, false, false, false);
 
         var json = JsonSerializer.Serialize(message);
         var body = Encoding.UTF8.GetBytes(json);
 
-        await channel.BasicPublishAsync(exchange: "", routingKey: _options.QueueName, body: body, cancellationToken: ct);
+        await channel.BasicPublishAsync("", queueName, body);
 
-        _logger.LogInformation("Message sent to queue {Queue}: {Message}", _options.QueueName, json);
+        Console.WriteLine($"Mensagem enviada: {json}");
     }
 }

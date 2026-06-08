@@ -1,0 +1,90 @@
+openapi: 3.0.1
+info:
+  title: Cobranca API
+  version: 1.0.0
+paths:
+  /cobranca/v1/cob:
+    post:
+      summary: Emitir cobrança (cob)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCobRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CobResponse'
+  /cobranca/v1/cobv:
+    post:
+      summary: Emitir cobrança variável (cobv)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCobvRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CobResponse'
+components:
+  schemas:
+    CreateCobRequest:
+      type: object
+      properties:
+        invoiceID:
+          type: string
+        chargeType:
+          type: string
+        amount:
+          type: number
+        pixKey:
+          type: string
+        dueDate:
+          type: string
+          format: date-time
+        expiresInSeconds:
+          type: integer
+        payerMessage:
+          type: string
+      required: [invoiceID, chargeType]
+
+    CreateCobvRequest:
+      type: object
+      properties:
+        invoiceID:
+          type: string
+        chargeType:
+          type: string
+        amount:
+          type: number
+        pixKey:
+          type: string
+        dueDate:
+          type: string
+          format: date-time
+        expiresInSeconds:
+          type: integer
+        payerMessage:
+          type: string
+      required: [invoiceID, chargeType, expiresInSeconds]
+
+    CobResponse:
+      type: object
+      properties:
+        txId:
+          type: string
+        status:
+          type: string
+        emv:
+          type: string
+        pixLink:
+          type: string
