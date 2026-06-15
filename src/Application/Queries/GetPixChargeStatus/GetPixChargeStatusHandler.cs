@@ -1,4 +1,4 @@
-using ApiService.Infrastructure.Data;
+using Application.Interfaces;
 using BankingHub.Application.Interfaces;
 using BankingHub.Application.Queries.GetPixChargeStatus;
 using MediatR;
@@ -23,12 +23,12 @@ public sealed record PixChargeStatusDto(
 public sealed class GetPixChargeStatusHandler
     : IRequestHandler<GetPixChargeStatusQuery, PixChargeStatusDto?>
 {
-    private readonly ApplicationDbContext _db;
+    private readonly IApplicationDbContext _db;
     private readonly IBankAdapterFactory _adapterFactory;
     private readonly ILogger<GetPixChargeStatusHandler> _logger;
 
     public GetPixChargeStatusHandler(
-        ApplicationDbContext db,
+        IApplicationDbContext db,
         IBankAdapterFactory adapterFactory,
         ILogger<GetPixChargeStatusHandler> logger)
     {

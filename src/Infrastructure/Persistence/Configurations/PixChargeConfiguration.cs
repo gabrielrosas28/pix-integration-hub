@@ -4,7 +4,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Domain.Aggregates.PixCharge;
 using Domain.ValueObjects;
-using BankingHub.Domain.ValueObjects;
 
 namespace Infrastructure.Data.Context.Configurations;
 

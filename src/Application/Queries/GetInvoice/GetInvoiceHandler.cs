@@ -1,4 +1,4 @@
-using ApiService.Infrastructure.Data;
+using Application.Interfaces;
 using BankingHub.Application.Queries.GetInvoice;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -8,9 +8,9 @@ namespace BankingHub.Application.Queries.GetInvoice;
 
 public sealed class GetInvoiceHandler : IRequestHandler<GetInvoiceQuery, InvoiceDto?>
 {
-    private readonly ApplicationDbContext _db;
+    private readonly IApplicationDbContext _db;
 
-    public GetInvoiceHandler(ApplicationDbContext db)
+    public GetInvoiceHandler(IApplicationDbContext db)
     {
         _db = db;
     }

@@ -1,7 +1,6 @@
 // Domain/Repositories/IPixChargeRepository.cs
 using Domain.Aggregates.PixCharge;
 using Domain.ValueObjects;
-using BankingHub.Domain.ValueObjects;
 
 namespace Domain.Repositories;
 

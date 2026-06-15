@@ -1,4 +1,4 @@
-using ApiService.Infrastructure.Data;
+using Application.Interfaces;
 using BankingHub.Application.Interfaces;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -9,13 +9,13 @@ namespace BankingHub.Application.Services;
 
 public class PixReconciliationService
 {
-    private readonly ApplicationDbContext _db;
+    private readonly IApplicationDbContext _db;
     private readonly IBankAdapterFactory _adapterFactory;
     private readonly INotificationService _notificationService;
     private readonly ILogger<PixReconciliationService> _logger;
 
     public PixReconciliationService(
-        ApplicationDbContext db,
+        IApplicationDbContext db,
         IBankAdapterFactory adapterFactory,
         INotificationService notificationService,
         ILogger<PixReconciliationService> logger)

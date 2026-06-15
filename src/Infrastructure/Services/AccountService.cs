@@ -25,7 +25,7 @@ public class ContaService : IContaService
         return await _context.Contas.FindAsync(id);
     }
 
-    public async Task<Conta> CreateAsync(CreateContaRequest request)
+    public async Task<Conta> CreateAsync(CreateAccountRequest request)
     {
         var conta = new Conta
         {
@@ -43,7 +43,7 @@ public class ContaService : IContaService
         return conta;
     }
 
-    public async Task<Conta?> UpdateAsync(int id, UpdateContaRequest request)
+    public async Task<Conta?> UpdateAsync(int id, UpdateAccountRequest request)
     {
         var conta = await _context.Contas.FindAsync(id);
 

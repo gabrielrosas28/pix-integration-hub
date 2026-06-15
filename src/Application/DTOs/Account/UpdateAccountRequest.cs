@@ -1,6 +1,6 @@
 namespace Application.DTOs;
 
-public class UpdateContaRequest
+public class UpdateAccountRequest
 {
     public int CredentialId { get; set; }
     public string Documento { get; set; } = string.Empty;

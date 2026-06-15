@@ -33,7 +33,7 @@ public class ContaController : ControllerBase
     }
 
     [HttpPost]
-    public IActionResult Create(CreateContaRequest request)
+    public IActionResult Create(CreateAccountRequest request)
     {
         var conta = _contaService.CreateAsync(request);
 
@@ -41,7 +41,7 @@ public class ContaController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public IActionResult Update(int id, UpdateContaRequest request)
+    public IActionResult Update(int id, UpdateAccountRequest request)
     {
         var conta = _contaService.UpdateAsync(id, request);
 

@@ -1,4 +1,4 @@
-using ApiService.Infrastructure.Data;
+using Application.Interfaces;
 using BankingHub.Application.Interfaces;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -10,12 +10,12 @@ namespace BankingHub.Application.Commands.ProcessWebhook;
 public sealed class ProcessWebhookHandler
     : IRequestHandler<ProcessWebhookCommand, ProcessWebhookResult>
 {
-    private readonly ApplicationDbContext _db;
+    private readonly IApplicationDbContext _db;
     private readonly IBankAdapterFactory _adapterFactory;
     private readonly ILogger<ProcessWebhookHandler> _logger;
 
     public ProcessWebhookHandler(
-        ApplicationDbContext db,
+        IApplicationDbContext db,
         IBankAdapterFactory adapterFactory,
         ILogger<ProcessWebhookHandler> logger)
     {

@@ -30,14 +30,14 @@ public class ChavePixController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create(CreateChavePixRequest request)
+    public async Task<IActionResult> Create(CreatePixKeyRequest request)
     {
         var chavePix = await _chavePixService.CreateAsync(request);
         return Ok(chavePix);
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, UpdateChavePixRequest request)
+    public async Task<IActionResult> Update(int id, UpdatePixKeyRequest request)
     {
         var chavePix = await _chavePixService.UpdateAsync(id, request);
         if (chavePix == null) return NotFound();

@@ -1,6 +1,6 @@
 namespace Application.DTOs;
 
-public class CreateContaRequest
+public class CreateAccountRequest
 {
     public int CredentialId { get; set; }
 

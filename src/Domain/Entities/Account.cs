@@ -1,3 +1,5 @@
+using Domain.Aggregates.Credential;
+
 namespace ApiService.Domain.Entities;
 
 public class Conta

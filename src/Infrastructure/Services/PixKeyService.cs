@@ -25,7 +25,7 @@ public class ChavePixService : IChavePixService
         return await _context.ChavesPix.Include(c => c.Conta).FirstOrDefaultAsync(c => c.Id == id);
     }
 
-    public async Task<ChavePix> CreateAsync(CreateChavePixRequest request)
+    public async Task<ChavePix> CreateAsync(CreatePixKeyRequest request)
     {
         var chavePix = new ChavePix
         {
@@ -39,7 +39,7 @@ public class ChavePixService : IChavePixService
         return chavePix;
     }
 
-    public async Task<ChavePix?> UpdateAsync(int id, UpdateChavePixRequest request)
+    public async Task<ChavePix?> UpdateAsync(int id, UpdatePixKeyRequest request)
     {
         var chavePix = await _context.ChavesPix.FindAsync(id);
         if (chavePix == null) return null;
