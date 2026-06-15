@@ -37,8 +37,10 @@ public sealed record TxId
     {
         var timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
         var random = Guid.NewGuid().ToString("N")[..10].ToUpper();
-        var value = $"{prefix}{timestamp}{random}"[..35];
-        
+        var raw = $"{prefix}{timestamp}{random}";
+        // Garante o limite do BACEN (<= 35 chars) sem estourar quando a string for menor.
+        var value = raw.Length > 35 ? raw[..35] : raw;
+
         return new TxId(value);
     }
 
