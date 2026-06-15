@@ -45,12 +45,33 @@ public sealed class ItauPixAdapter : IBankPixAdapter
 
     public bool ValidateWebhook(IReadOnlyDictionary<string, string> headers, JsonElement body)
     {
-        throw new NotImplementedException("ValidateWebhook ainda não foi implementado para o Itaú.");
+        // Em produção o Itaú valida via mTLS / assinatura / IP de origem.
+        // Em ambiente local (mock), aceitamos um corpo JSON de objeto não vazio.
+        return body.ValueKind == JsonValueKind.Object;
     }
 
     public WebhookEvent ParseWebhookEvent(JsonElement body)
     {
-        throw new NotImplementedException("ParseWebhookEvent ainda não foi implementado para o Itaú.");
+        // O webhook do Itaú traz o array "pix" com o txid da cobrança paga.
+        string? txId = null;
+
+        if (body.TryGetProperty("pix", out var pixArr)
+            && pixArr.ValueKind == JsonValueKind.Array
+            && pixArr.GetArrayLength() > 0
+            && pixArr[0].TryGetProperty("txid", out var txEl))
+        {
+            txId = txEl.GetString();
+        }
+
+        // Fallback: txid no nível raiz
+        if (txId is null && body.TryGetProperty("txid", out var rootTx))
+            txId = rootTx.GetString();
+
+        return new WebhookEvent(
+            TxId: txId,
+            EventType: WebhookEventType.PaymentConfirmed,
+            ReceivedAt: DateTimeOffset.UtcNow,
+            Raw: body);
     }
 
 /// <summary>
@@ -137,8 +158,8 @@ public sealed class ItauPixAdapter : IBankPixAdapter
 
         var path = type switch
         {
-            PixChargeType.Cob => $"/cobv/{txId}",
-            PixChargeType.CobV => $"/cob/{txId}",
+            PixChargeType.Cob => $"/cob/{txId}",
+            PixChargeType.CobV => $"/cobv/{txId}",
             _ => throw new ArgumentOutOfRangeException(nameof(type), "Tipo de cobrança não suportado")
         };
         var url = $"{BaseUrl}{path}";

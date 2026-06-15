@@ -1,4 +1,4 @@
-using ApiService.Infrastructure.Data;
+using Application.Interfaces;
 using ApiService.Domain.Entities;
 using BankingHub.Application.Commands.CreateInvoice;
 using MediatR;
@@ -10,11 +10,11 @@ namespace BankingHub.Application.Commands.CreateInvoice;
 public sealed class CreateInvoiceHandler
     : IRequestHandler<CreateInvoiceCommand, CreateInvoiceResult>
 {
-    private readonly ApplicationDbContext _db;
+    private readonly IApplicationDbContext _db;
     private readonly ILogger<CreateInvoiceHandler> _logger;
 
     public CreateInvoiceHandler(
-        ApplicationDbContext db,
+        IApplicationDbContext db,
         ILogger<CreateInvoiceHandler> logger)
     {
         _db = db;

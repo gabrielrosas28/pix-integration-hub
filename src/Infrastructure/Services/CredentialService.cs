@@ -1,7 +1,7 @@
 using Application.DTOs;
-using ApiService.Domain.Entities;
-using ApiService.Infrastructure.Data;
 using Application.Interfaces;
+using Domain.Aggregates.Credential;
+using ApiService.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Services;
@@ -17,57 +17,58 @@ public class CredentialService : ICredentialService // Alterado herança e nome 
 
     public async Task<List<Credential>> GetAllAsync()
     {
-        return await _context.Credentials.ToListAsync(); // Alterado de Secrets para Credentials
+        return await _context.Credentials.ToListAsync();
     }
 
-    public async Task<Credential?> GetByIdAsync(int id)
+    public async Task<Credential?> GetByIdAsync(Guid id)
     {
-        return await _context.Credentials.FindAsync(id); // Alterado de Secrets para Credentials
+        var credentialId = CredentialId.From(id);
+        return await _context.Credentials
+            .FirstOrDefaultAsync(c => c.Id == credentialId);
     }
 
     public async Task<Credential> CreateAsync(CreateCredentialRequest request)
     {
-        var credential = new Credential // Alterado de Secret para Credential
-        {
-            ClientId = request.ClientId,
-            ClientSecretValue = request.ClientSecretValue, // Alterado para refletir a nova propriedade da entidade
-            Certificado = request.Certificado,
-            SenhaCertificado = request.SenhaCertificado
-        };
+        // Usa a factory do agregado (garante invariantes de domínio)
+        var credential = Credential.Create(
+            clientId:            request.ClientId,
+            clientSecret:        request.ClientSecretValue,
+            certificate:         request.Certificado,
+            certificatePassword: request.SenhaCertificado);
 
-        _context.Credentials.Add(credential); // Alterado para Credentials
-
+        _context.Credentials.Add(credential);
         await _context.SaveChangesAsync();
 
         return credential;
     }
 
-    public async Task<Credential?> UpdateAsync(int id, UpdateCredentialRequest request)
+    public async Task<Credential?> UpdateAsync(Guid id, UpdateCredentialRequest request)
     {
-        var credential = await _context.Credentials.FindAsync(id); // Alterado de Secrets para Credentials
+        var credentialId = CredentialId.From(id);
+        var credential = await _context.Credentials
+            .FirstOrDefaultAsync(c => c.Id == credentialId);
 
-        if (credential == null)
+        if (credential is null)
             return null;
 
-        credential.ClientId = request.ClientId;
-        credential.ClientSecretValue = request.ClientSecretValue; // Alterado
-        credential.Certificado = request.Certificado;
-        credential.SenhaCertificado = request.SenhaCertificado;
+        // O agregado só permite atualizar o certificado/senha (regra de domínio)
+        credential.UpdateCertificate(request.Certificado, request.SenhaCertificado);
 
         await _context.SaveChangesAsync();
 
         return credential;
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(Guid id)
     {
-        var credential = await _context.Credentials.FindAsync(id); // Alterado de Secrets para Credentials
+        var credentialId = CredentialId.From(id);
+        var credential = await _context.Credentials
+            .FirstOrDefaultAsync(c => c.Id == credentialId);
 
         if (credential is null)
             return false;
 
-        _context.Credentials.Remove(credential); // Alterado para Credentials
-
+        _context.Credentials.Remove(credential);
         await _context.SaveChangesAsync();
 
         return true;

@@ -9,9 +9,9 @@ public interface IContaService
 
     Task<Conta?> GetByIdAsync(int id);
 
-    Task<Conta> CreateAsync(CreateContaRequest request);
+    Task<Conta> CreateAsync(CreateAccountRequest request);
 
-    Task<Conta?> UpdateAsync(int id, UpdateContaRequest request);
+    Task<Conta?> UpdateAsync(int id, UpdateAccountRequest request);
 
     Task<bool> DeleteAsync(int id);
 }

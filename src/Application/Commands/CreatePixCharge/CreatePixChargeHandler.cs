@@ -1,4 +1,4 @@
-using ApiService.Infrastructure.Data;
+using Application.Interfaces;
 using ApiService.Domain.Entities;
 using BankingHub.Application.Interfaces;
 using MediatR;
@@ -11,12 +11,12 @@ namespace BankingHub.Application.Commands.CreatePixCharge;
 public sealed class CreatePixChargeHandler
     : IRequestHandler<CreatePixChargeCommand, CreatePixChargeResult>
 {
-    private readonly ApplicationDbContext _db;
+    private readonly IApplicationDbContext _db;
     private readonly IBankAdapterFactory _adapterFactory;
     private readonly ILogger<CreatePixChargeHandler> _logger;
 
     public CreatePixChargeHandler(
-        ApplicationDbContext db,
+        IApplicationDbContext db,
         IBankAdapterFactory adapterFactory,
         ILogger<CreatePixChargeHandler> logger)
     {

@@ -7,7 +7,7 @@ public interface IChavePixService
 {
     Task<List<ChavePix>> GetAllAsync();
     Task<ChavePix?> GetByIdAsync(int id);
-    Task<ChavePix> CreateAsync(CreateChavePixRequest request);
-    Task<ChavePix?> UpdateAsync(int id, UpdateChavePixRequest request);
+    Task<ChavePix> CreateAsync(CreatePixKeyRequest request);
+    Task<ChavePix?> UpdateAsync(int id, UpdatePixKeyRequest request);
     Task<bool> DeleteAsync(int id);
 }

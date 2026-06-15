@@ -1,5 +1,5 @@
 using System.Net.Http.Json;
-using ApiService.Application.MockPayments;
+using BankingHub.Application.MockPayments;
 using ApiService.Infrastructure.Configuration;
 using Microsoft.Extensions.Options;
 

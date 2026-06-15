@@ -1,4 +1,6 @@
-using ApiService.Application.MockPayments;
+using Scalar.AspNetCore;
+using ApiService.Filters;
+using BankingHub.Application.MockPayments;
 using ApiService.Infrastructure.Configuration;
 using ApiService.Infrastructure.Data;
 using ApiService.Infrastructure.MockPayments;
@@ -34,7 +36,11 @@ builder.Services.AddOpenApi();
 builder.Services.Configure<MockServerOptions>(builder.Configuration.GetSection("ExternalServices:MockServer"));
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    options.Filters.AddService<ValidationFilter>();
+});
+builder.Services.AddScoped<ValidationFilter>();
 builder.Services.AddApiVersioning(options =>
 {
     options.DefaultApiVersion = new ApiVersion(1, 0);
@@ -53,12 +59,54 @@ builder.Services.AddScoped<ICredentialService, CredentialService>(); // Alterado
 builder.Services.AddScoped<IChavePixService, ChavePixService>();
 builder.Services.AddScoped<ICobrancaService, Infrastructure.Services.CobrancaService>();
 
+// ===== Fluxo de webhook / cobrança Pix (MediatR + adapter Itaú) =====
+// MediatR: descobre os handlers (inclui ProcessWebhookHandler) na assembly da Application
+builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(
+    typeof(BankingHub.Application.Commands.ProcessWebhook.ProcessWebhookCommand).Assembly));
+
+// Abstração de persistência usada pelos handlers
+builder.Services.AddScoped<Application.Interfaces.IApplicationDbContext>(
+    sp => sp.GetRequiredService<ApplicationDbContext>());
+
+// Notificação (usada por handlers de evento e reconciliação)
+builder.Services.AddScoped<BankingHub.Application.Interfaces.INotificationService,
+    Infrastructure.Services.NotificationService>();
+
+// Opções do Itaú (token provider e adapter usam classes de options distintas)
+builder.Services.AddSingleton(
+    builder.Configuration.GetSection("Itau").Get<BankingHub.Infrastructure.Configuration.ItauOptions>()
+    ?? new BankingHub.Infrastructure.Configuration.ItauOptions());
+builder.Services.AddSingleton(
+    builder.Configuration.GetSection("ItauAdapter").Get<Infrastructure.BankAdapters.Itau.ItauAdapterOptions>()
+    ?? new Infrastructure.BankAdapters.Itau.ItauAdapterOptions());
+
+// Token provider OAuth2 e o adapter Itaú (clientes HTTP tipados)
+builder.Services.AddHttpClient<Infrastructure.BankAdapters.Itau.IItauTokenProvider,
+    Infrastructure.BankAdapters.Itau.ItauTokenProvider>();
+builder.Services.AddHttpClient<BankingHub.Application.Interfaces.IBankPixAdapter,
+    Infrastructure.BankAdapters.Itau.ItauPixAdapter>();
+
+// Factory que resolve o adapter por BankId
+builder.Services.AddScoped<BankingHub.Application.Interfaces.IBankAdapterFactory,
+    BankingHub.Infrastructure.BankAdapters.BankAdapterFactory>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+
+    // UI interativa pra explorar/testar os endpoints no navegador (em /scalar/v1)
+    app.MapScalarApiReference();
+    // Raiz redireciona pra UI, pra http://localhost:5243/ abrir direto
+    app.MapGet("/", () => Results.Redirect("/scalar/v1"));
+
+    // DEV: cria o schema do banco a partir do modelo atual (facilita testes locais).
+    // Em produção, usar migrations (dotnet ef database update) em vez disto.
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    db.Database.EnsureCreated();
 }
 
 app.MapControllers();
@@ -109,7 +157,7 @@ app.MapGet("/contas/{id}", async (int id, IContaService contaService) =>
 });
 
 app.MapPost("/contas", async (
-    CreateContaRequest request,
+    CreateAccountRequest request,
     IContaService contaService) =>
 {
     var conta = await contaService.CreateAsync(request);
@@ -119,7 +167,7 @@ app.MapPost("/contas", async (
 
 app.MapPut("/contas/{id}", async (
     int id,
-    UpdateContaRequest request,
+    UpdateAccountRequest request,
     IContaService contaService) =>
 {
     var conta = await contaService.UpdateAsync(id, request);
@@ -150,7 +198,7 @@ app.MapGet("/credentials", async (ICredentialService credentialService) => // Al
     return Results.Ok(list);
 });
 
-app.MapGet("/credentials/{id}", async (int id, ICredentialService credentialService) => // Alterado rota e interface
+app.MapGet("/credentials/{id:guid}", async (Guid id, ICredentialService credentialService) => // Alterado rota e interface
 {
     var credential = await credentialService.GetByIdAsync(id); // Alterado nome da variável
 
@@ -169,8 +217,8 @@ app.MapPost("/credentials", async (
     return Results.Ok(credential);
 });
 
-app.MapPut("/credentials/{id}", async (
-    int id,
+app.MapPut("/credentials/{id:guid}", async (
+    Guid id,
     UpdateCredentialRequest request, // Alterado tipo do request
     ICredentialService credentialService) => // Alterado interface
 {
@@ -182,8 +230,8 @@ app.MapPut("/credentials/{id}", async (
     return Results.Ok(credential);
 });
 
-app.MapDelete("/credentials/{id}", async (
-    int id,
+app.MapDelete("/credentials/{id:guid}", async (
+    Guid id,
     ICredentialService credentialService) => // Alterado interface
 {
     var deleted = await credentialService.DeleteAsync(id);

@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Domain.Aggregates.Invoice;
 using Domain.ValueObjects;
-using BankingHub.Domain.ValueObjects;
 
 namespace Infrastructure.Data.Context.Configurations;
 

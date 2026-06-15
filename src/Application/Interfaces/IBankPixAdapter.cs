@@ -44,15 +44,7 @@ public interface IBankPixAdapter
     WebhookEvent ParseWebhookEvent(JsonElement body);
 }
 
-/// <summary>
-/// Factory para obter o adapter correto baseado no BankId.
-/// </summary>
-public interface IBankAdapterFactory
-{
-    IBankPixAdapter Get(string bankId);
-    IReadOnlyCollection<string> GetAvailableBanks();
-    bool IsSupported(string bankId);
-}
+// IBankAdapterFactory está definida em IBankAdapterFactory.cs (mesmo namespace).
 
 /// <summary>
 /// Serviço de notificações em tempo real (SignalR).

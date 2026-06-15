@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore;
 using Domain.Aggregates.PixCharge;
 using Domain.Repositories;
 using Domain.ValueObjects;
-using BankingHub.Domain.ValueObjects;
 using ApiService.Infrastructure.Data;
 
 namespace Infrastructure.Persistence.Repositories;

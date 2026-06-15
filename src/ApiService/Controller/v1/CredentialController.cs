@@ -22,8 +22,8 @@ public class CredentialController : ControllerBase // Alterado de SecretControll
         return Ok(list);
     }
 
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(int id)
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetById(Guid id)
     {
         var credential = await _credentialService.GetByIdAsync(id); // Alterado nome da variável de escopo
 
@@ -41,8 +41,8 @@ public class CredentialController : ControllerBase // Alterado de SecretControll
         return Ok(credential);
     }
 
-    [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, UpdateCredentialRequest request) // Alterado tipo do parâmetro
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> Update(Guid id, UpdateCredentialRequest request) // Alterado tipo do parâmetro
     {
         var credential = await _credentialService.UpdateAsync(id, request);
 
@@ -52,8 +52,8 @@ public class CredentialController : ControllerBase // Alterado de SecretControll
         return Ok(credential);
     }
 
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(int id)
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id)
     {
         var deleted = await _credentialService.DeleteAsync(id);
 
