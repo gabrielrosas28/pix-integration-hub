@@ -5,6 +5,7 @@ using Domain.Aggregates.PixCharge;
 using Domain.Aggregates.Credential; // Alterado de Domain.Aggregates.Secret
 using Infrastructure.Data.Context.Configurations;
 using Application.Interfaces;
+using Credential = Domain.Aggregates.Credential.Credential;
 
 namespace ApiService.Infrastructure.Data;
 
@@ -15,11 +16,11 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     {
     }
 
-    public DbSet<Conta> Contas => Set<Conta>();
+    public DbSet<Account> Contas => Set<Account>();
     public DbSet<Credential> Credentials => Set<Credential>(); // Alterado de DbSet<Secret> Secrets
-    public DbSet<ChavePix> ChavesPix => Set<ChavePix>();
-    public DbSet<Auditoria> Auditorias => Set<Auditoria>();
-    public DbSet<Cobranca> Cobrancas => Set<Cobranca>();
+    public DbSet<PixKey> ChavesPix => Set<PixKey>();
+    public DbSet<Audit> Auditorias => Set<Audit>();
+    public DbSet<Charge> Cobrancas => Set<Charge>();
     // Invoice/PixCharge: agregados DDD ainda nao usados por nenhum endpoint registrado
     // e com mapeamento EF incompleto (VOs Money/EmvCode/ChargeId sem conversor).
     // Os DbSets sao mantidos para os repositorios compilarem, mas os tipos sao
@@ -30,7 +31,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<Conta>().HasKey(c => c.Id);
+        modelBuilder.Entity<Account>().HasKey(c => c.Id);
 
         // Mapeia o agregado Credential com o id fortemente tipado (CredentialId)
         modelBuilder.Entity<Credential>(b =>
@@ -42,20 +43,20 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
         });
 
         // Relacionamento entre Conta e Credential tratado via CredentialId (Foreign Key)
-        modelBuilder.Entity<Conta>()
+        modelBuilder.Entity<Account>()
             .Property(c => c.CredentialId) // Alterado de SecretId para CredentialId
             .IsRequired(false);
 
         // A navegacao Conta -> Credential nao e um relacionamento mapeado:
         // CredentialId e int legado, enquanto o agregado usa CredentialId/Guid.
-        modelBuilder.Entity<Conta>().Ignore(c => c.Credential);
+        modelBuilder.Entity<Account>().Ignore(c => c.Credential);
         
-        modelBuilder.Entity<ChavePix>()
-            .HasOne(cp => cp.Conta)
+        modelBuilder.Entity<PixKey>()
+            .HasOne(cp => cp.Account)
             .WithMany()
-            .HasForeignKey(cp => cp.ContaId);
+            .HasForeignKey(cp => cp.AccountId);
 
-        modelBuilder.Entity<Cobranca>(b =>
+        modelBuilder.Entity<Charge>(b =>
         {
             b.HasKey(c => c.Id);
             b.Property(c => c.TxId).IsRequired();

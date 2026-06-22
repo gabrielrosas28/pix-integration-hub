@@ -30,7 +30,7 @@ src/
 └─ ApiService/      # API REST, Controllers, Program.cs (composição/DI)
 ```
 
-Solução: `Integração_Bancaria_squad_8.sln`
+Solução: `BankingIntegration_squad_8.sln`
 
 ---
 

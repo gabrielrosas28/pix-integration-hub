@@ -33,8 +33,8 @@ public class CredentialService : ICredentialService // Alterado herança e nome 
         var credential = Credential.Create(
             clientId:            request.ClientId,
             clientSecret:        request.ClientSecretValue,
-            certificate:         request.Certificado,
-            certificatePassword: request.SenhaCertificado);
+            certificate:         request.Certificate,
+            certificatePassword: request.CertificatePassword);
 
         _context.Credentials.Add(credential);
         await _context.SaveChangesAsync();
@@ -52,7 +52,7 @@ public class CredentialService : ICredentialService // Alterado herança e nome 
             return null;
 
         // O agregado só permite atualizar o certificado/senha (regra de domínio)
-        credential.UpdateCertificate(request.Certificado, request.SenhaCertificado);
+        credential.UpdateCertificate(request.Certificate, request.CertificatePassword);
 
         await _context.SaveChangesAsync();
 

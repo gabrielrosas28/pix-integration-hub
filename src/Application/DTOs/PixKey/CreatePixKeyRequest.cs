@@ -2,7 +2,7 @@ namespace Application.DTOs;
 
 public class CreatePixKeyRequest
 {
-    public int ContaId { get; set; }
-    public string Chave { get; set; } = string.Empty;
-    public string Tipo { get; set; } = string.Empty;
+    public int AccountId { get; set; }
+    public string Key { get; set; } = string.Empty;
+    public string Type { get; set; } = string.Empty;
 }

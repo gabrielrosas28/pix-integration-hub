@@ -1,19 +1,19 @@
 namespace ApiService.Domain.Entities;
 
-public class Auditoria
+public class Audit
 {
     public int AuditoriaId { get; set; }
 
     
-    public int ContaId { get; set; }
-    public DateTime HorarioRegistro { get; set; }
-    public string StatusPagamento { get; set; } = string.Empty;
+    public int AccountId { get; set; }
+    public DateTime RegistrationTime { get; set; }
+    public string StatusPayment { get; set; } = string.Empty;
     public int TxId { get; set; }
-    public string Descricao { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
     public string Raw { get; set; } = string.Empty;
-    public decimal Valor { get; set; }
-    public string PayloadAcao { get; set; } = string.Empty;
-    public string? PayloadConfirmacao { get; set; } = string.Empty;
-    public DateTime? DataPagamento { get; set; }
-    public DateTime? HorarioConfirmacao { get; set; }
+    public decimal Amount { get; set; }
+    public string PayloadAction { get; set; } = string.Empty;
+    public string? PayloadConfirmation { get; set; } = string.Empty;
+    public DateTime? PaymentDate { get; set; }
+    public DateTime? ConfirmationTime { get; set; }
 }

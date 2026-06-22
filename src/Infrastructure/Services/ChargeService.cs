@@ -22,7 +22,7 @@ public class CobrancaService : ICobrancaService
         var emv = $"EMV:{txId}";
         var pixLink = $"pix://{txId}";
 
-        var cobranca = new Cobranca
+        var cobranca = new Charge
         {
             TxId = txId,
             InvoiceID = request.InvoiceID,
@@ -62,7 +62,7 @@ public class CobrancaService : ICobrancaService
         var emv = $"EMV:{txId}";
         var pixLink = $"pix://{txId}";
 
-        var cobranca = new Cobranca
+        var cobranca = new Charge
         {
             TxId = txId,
             InvoiceID = request.InvoiceID,

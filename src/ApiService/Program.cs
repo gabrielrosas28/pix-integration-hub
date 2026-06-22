@@ -54,9 +54,9 @@ builder.Services.AddHttpClient<IMockPaymentGateway, MockPaymentGateway>((service
 });
 
 builder.Services.AddScoped<ProcessMockPaymentUseCase>();
-builder.Services.AddScoped<IContaService, ContaService>();
+builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<ICredentialService, CredentialService>(); // Alterado de ISecretService/SecretService
-builder.Services.AddScoped<IChavePixService, ChavePixService>();
+builder.Services.AddScoped<IPixKeyService, PixKeyService>();
 builder.Services.AddScoped<ICobrancaService, Infrastructure.Services.CobrancaService>();
 
 // ===== Fluxo de webhook / cobrança Pix (MediatR + adapter Itaú) =====
@@ -140,49 +140,49 @@ app.MapPost("/payments/mock", async (
     return Results.Ok(response);
 });
 
-app.MapGet("/contas", async (IContaService contaService) =>
+app.MapGet("/contas", async (IAccountService accountService) =>
 {
-    var contas = await contaService.GetAllAsync();
-    return Results.Ok(contas);
+    var accounts = await accountService.GetAllAsync();
+    return Results.Ok(accounts);
 });
 
-app.MapGet("/contas/{id}", async (int id, IContaService contaService) =>
+app.MapGet("/contas/{id}", async (int id, IAccountService accountService) =>
 {
-    var conta = await contaService.GetByIdAsync(id);
+    var account = await accountService.GetByIdAsync(id);
 
-    if (conta is null)
+    if (account is null)
         return Results.NotFound();
 
-    return Results.Ok(conta);
+    return Results.Ok(account);
 });
 
 app.MapPost("/contas", async (
     CreateAccountRequest request,
-    IContaService contaService) =>
+    IAccountService accountService) =>
 {
-    var conta = await contaService.CreateAsync(request);
+    var account = await accountService.CreateAsync(request);
 
-    return Results.Ok(conta);
+    return Results.Ok(account);
 });
 
 app.MapPut("/contas/{id}", async (
     int id,
     UpdateAccountRequest request,
-    IContaService contaService) =>
+    IAccountService accountService) =>
 {
-    var conta = await contaService.UpdateAsync(id, request);
+    var account = await accountService.UpdateAsync(id, request);
 
-    if (conta is null)
+    if (account is null)
         return Results.NotFound();
 
-    return Results.Ok(conta);
+    return Results.Ok(account);
 });
 
 app.MapDelete("/contas/{id}", async (
     int id,
-    IContaService contaService) =>
+    IAccountService accountService) =>
 {
-    var deleted = await contaService.DeleteAsync(id);
+    var deleted = await accountService.DeleteAsync(id);
 
     if (!deleted)
         return Results.NotFound();

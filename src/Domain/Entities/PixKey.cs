@@ -1,11 +1,13 @@
+using Domain.Aggregates.Account;
+
 namespace ApiService.Domain.Entities;
 
-public class ChavePix
+public class PixKey
 {
     public int Id { get; set; }
     
-    public int ContaId { get; set; }
-    public string Chave { get; set; } = string.Empty;
-    public string Tipo { get; set; } = string.Empty; 
-    public Conta? Conta { get; set; }
+    public int AccountId { get; set; }
+    public string Key { get; set; } = string.Empty;
+    public string Type { get; set; } = string.Empty; 
+    public Account? Account { get; set; }
 }

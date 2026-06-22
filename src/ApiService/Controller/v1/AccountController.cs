@@ -8,9 +8,9 @@ namespace ApiService.Controllers;
 [Route("api/[controller]")]
 public class ContaController : ControllerBase
 {
-    private readonly IContaService _contaService;
+    private readonly IAccountService _contaService;
 
-    public ContaController(IContaService contaService)
+    public ContaController(IAccountService contaService)
     {
         _contaService = contaService;
     }

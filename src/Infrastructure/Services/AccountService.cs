@@ -6,34 +6,34 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Services;
 
-public class ContaService : IContaService
+public class AccountService : IAccountService
 {
     private readonly ApplicationDbContext _context;
 
-    public ContaService(ApplicationDbContext context)
+    public AccountService(ApplicationDbContext context)
     {
         _context = context;
     }
 
-    public async Task<List<Conta>> GetAllAsync()
+    public async Task<List<Account>> GetAllAsync()
     {
         return await _context.Contas.ToListAsync();
     }
 
-    public async Task<Conta?> GetByIdAsync(int id)
+    public async Task<Account?> GetByIdAsync(int id)
     {
         return await _context.Contas.FindAsync(id);
     }
 
-    public async Task<Conta> CreateAsync(CreateAccountRequest request)
+    public async Task<Account> CreateAsync(CreateAccountRequest request)
     {
-        var conta = new Conta
+        var conta = new Account
         {
             CredentialId = request.CredentialId, // Alterado de SecretId para CredentialId
-            Documento = request.Documento,
+            Document = request.Document,
             BankId = request.BankId,
-            NumeroConta = request.NumeroConta,
-            Agencia = request.Agencia
+            AccountNumber = request.AccountNumber,
+            Agency = request.Agency
         };
 
         _context.Contas.Add(conta);
@@ -43,7 +43,7 @@ public class ContaService : IContaService
         return conta;
     }
 
-    public async Task<Conta?> UpdateAsync(int id, UpdateAccountRequest request)
+    public async Task<Account?> UpdateAsync(int id, UpdateAccountRequest request)
     {
         var conta = await _context.Contas.FindAsync(id);
 
@@ -51,10 +51,10 @@ public class ContaService : IContaService
             return null;
 
         conta.CredentialId = request.CredentialId; // Alterado de SecretId para CredentialId
-        conta.Documento = request.Documento;
+        conta.Document = request.Document;
         conta.BankId = request.BankId;
-        conta.NumeroConta = request.NumeroConta;
-        conta.Agencia = request.Agencia;
+        conta.AccountNumber = request.AccountNumber;
+        conta.Agency = request.Agency;
 
         await _context.SaveChangesAsync();
 

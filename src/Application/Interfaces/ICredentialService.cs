@@ -1,6 +1,7 @@
 using Application.DTOs;
 using ApiService.Domain.Entities;
 using Domain.Aggregates.Credential;
+using Credential = Domain.Aggregates.Credential.Credential;
 
 namespace Application.Interfaces;
 

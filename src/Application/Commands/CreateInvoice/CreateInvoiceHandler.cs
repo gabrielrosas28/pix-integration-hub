@@ -37,7 +37,7 @@ public sealed class CreateInvoiceHandler
         var invoiceId = Guid.NewGuid();
 
         // Persiste a Invoice como cobrança pendente ainda sem TxId
-        var cobranca = new Cobranca
+        var cobranca = new Charge
         {
             TxId       = string.Empty,   // Será preenchido ao criar o PixCharge
             InvoiceID  = invoiceId.ToString(),

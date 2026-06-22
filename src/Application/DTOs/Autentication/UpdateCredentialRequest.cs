@@ -6,9 +6,9 @@ public class UpdateCredentialRequest // Alterado de UpdateSecretRequest
 
     public string ClientSecretValue { get; set; } = string.Empty; // Alterado de ClienteSecret para ClientSecretValue
 
-    public string Certificado { get; set; } = string.Empty;
+    public string Certificate { get; set; } = string.Empty;
 
-    public string SenhaCertificado { get; set; } = string.Empty;
+    public string CertificatePassword { get; set; } = string.Empty;
 
-    public int? ContaId { get; set; }
+    public int? AccountId { get; set; }
 }

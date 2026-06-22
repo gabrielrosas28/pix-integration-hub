@@ -1,6 +1,6 @@
 namespace ApiService.Domain.Entities;
 
-public class Cobranca
+public class Charge
 {
     public int Id { get; set; }
     public string TxId { get; set; } = string.Empty;

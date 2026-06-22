@@ -3,15 +3,15 @@ using ApiService.Domain.Entities;
 
 namespace Application.Interfaces;
 
-public interface IContaService
+public interface IAccountService
 {
-    Task<List<Conta>> GetAllAsync();
+    Task<List<Account>> GetAllAsync();
 
-    Task<Conta?> GetByIdAsync(int id);
+    Task<Account?> GetByIdAsync(int id);
 
-    Task<Conta> CreateAsync(CreateAccountRequest request);
+    Task<Account> CreateAsync(CreateAccountRequest request);
 
-    Task<Conta?> UpdateAsync(int id, UpdateAccountRequest request);
+    Task<Account?> UpdateAsync(int id, UpdateAccountRequest request);
 
     Task<bool> DeleteAsync(int id);
 }

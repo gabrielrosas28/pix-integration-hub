@@ -12,7 +12,7 @@ namespace Application.Interfaces;
 /// </summary>
 public interface IApplicationDbContext
 {
-    DbSet<Cobranca> Cobrancas { get; }
+    DbSet<Charge> Cobrancas { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

@@ -6,32 +6,32 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Services;
 
-public class ChavePixService : IChavePixService
+public class PixKeyService : IPixKeyService
 {
     private readonly ApplicationDbContext _context;
 
-    public ChavePixService(ApplicationDbContext context)
+    public PixKeyService(ApplicationDbContext context)
     {
         _context = context;
     }
 
-    public async Task<List<ChavePix>> GetAllAsync()
+    public async Task<List<PixKey>> GetAllAsync()
     {
-        return await _context.ChavesPix.Include(c => c.Conta).ToListAsync();
+        return await _context.ChavesPix.Include(c => c.Account).ToListAsync();
     }
 
-    public async Task<ChavePix?> GetByIdAsync(int id)
+    public async Task<PixKey?> GetByIdAsync(int id)
     {
-        return await _context.ChavesPix.Include(c => c.Conta).FirstOrDefaultAsync(c => c.Id == id);
+        return await _context.ChavesPix.Include(c => c.Account).FirstOrDefaultAsync(c => c.Id == id);
     }
 
-    public async Task<ChavePix> CreateAsync(CreatePixKeyRequest request)
+    public async Task<PixKey> CreateAsync(CreatePixKeyRequest request)
     {
-        var chavePix = new ChavePix
+        var chavePix = new PixKey
         {
-            ContaId = request.ContaId,
-            Chave = request.Chave,
-            Tipo = request.Tipo
+            AccountId = request.AccountId,
+            Key = request.Key,
+            Type = request.Type
         };
 
         _context.ChavesPix.Add(chavePix);
@@ -39,13 +39,13 @@ public class ChavePixService : IChavePixService
         return chavePix;
     }
 
-    public async Task<ChavePix?> UpdateAsync(int id, UpdatePixKeyRequest request)
+    public async Task<PixKey?> UpdateAsync(int id, UpdatePixKeyRequest request)
     {
         var chavePix = await _context.ChavesPix.FindAsync(id);
         if (chavePix == null) return null;
 
-        chavePix.Chave = request.Chave;
-        chavePix.Tipo = request.Tipo;
+        chavePix.Key = request.Key;
+        chavePix.Type = request.Type;
 
         await _context.SaveChangesAsync();
         return chavePix;

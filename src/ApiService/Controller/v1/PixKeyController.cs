@@ -8,9 +8,9 @@ namespace ApiService.Controllers;
 [Route("api/[controller]")]
 public class ChavePixController : ControllerBase
 {
-    private readonly IChavePixService _chavePixService;
+    private readonly IPixKeyService _chavePixService;
 
-    public ChavePixController(IChavePixService chavePixService)
+    public ChavePixController(IPixKeyService chavePixService)
     {
         _chavePixService = chavePixService;
     }

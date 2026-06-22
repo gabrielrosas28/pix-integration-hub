@@ -89,7 +89,7 @@ public sealed class CreatePixChargeHandler
         invoiceRow.UpdatedAt = DateTime.UtcNow;
 
         // Cria registro separado de PixCharge
-        var pixCharge = new Cobranca
+        var pixCharge = new Charge
         {
             TxId             = txId,
             InvoiceID        = cmd.InvoiceId.ToString(),

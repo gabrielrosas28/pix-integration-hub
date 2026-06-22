@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260525000000_AddAuditoriaColumns")]
-    partial class AddAuditoriaColumns
+    [Migration("20260525000000_AddAuditColumns")]
+    partial class AddAuditColumns
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
